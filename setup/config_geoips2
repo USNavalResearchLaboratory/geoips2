@@ -1,0 +1,49 @@
+if [ -L $BASH_SOURCE ]; then
+    linkpath=`readlink $BASH_SOURCE`
+    # Used in qsub.py
+    export GEOIPS_RCFILE=$linkpath
+    CURRENT_CONFIGPATH=`dirname $linkpath`
+    export GEOIPS_VERS=`cat $CURRENT_CONFIGPATH/../VERSION`
+else
+    CURRENT_CONFIGPATH="$( cd "$( dirname "${BASH_SOURCE[0]}")" && pwd)"
+    # Used in qsub.py
+    export GEOIPS_RCFILE=$CURRENT_CONFIGPATH/"$(basename "${BASH_SOURCE[0]}")"
+    export GEOIPS_VERS=`cat $CURRENT_CONFIGPATH/../VERSION`
+fi
+
+export GEOIPS2_BASEDIR=`dirname $CURRENT_CONFIGPATH`
+export GEOIPS2_BASEDIR=`dirname $GEOIPS2_BASEDIR`
+export GEOIPS2_BASEDIR=`dirname $GEOIPS2_BASEDIR`
+
+# This is the only *required* environment variable - all output goes here.
+export GEOIPS_OUTDIRS=$GEOIPS2_BASEDIR/geoips_outdirs
+
+# This directory contains external packages, system installs, etc
+# Not required for GeoIPS runtime
+export GEOIPS2_DEPENDENCIES_DIR=$GEOIPS2_BASEDIR/geoips2_dependencies
+
+# This directory should ONLY contain geoips2 modules - it is used in geoips2/filenames/base_paths.py
+# to set up the list of available geoips2 packages / repos.
+export GEOIPS2_MODULES_DIR=$GEOIPS2_BASEDIR/geoips2_modules
+
+if [ "`which conda`" != "" ]; then
+    condapath=`which conda`
+    condapath=`dirname $condapath`
+    condapath=`dirname $condapath`
+    # If we do not source conda.sh, conda activate will not work from scripts, only command line
+    if [ -e $condapath/etc/profile.d/conda.sh ]; then
+        source $condapath/etc/profile.d/conda.sh
+    fi
+    # If using conda env, activate geoips2_conda environment
+    conda activate geoips2_conda
+elif [ -e $GEOIPS2_DEPENDENCIES_DIR/geoips2_venv/bin/activate ]; then
+    # If using Python 3 virtualenv, activate geoips2_venv environment
+    source $GEOIPS2_DEPENDENCIES_DIR/geoips2_venv/bin/activate
+fi
+export PYTHONPATH=$GEOIPS2_BASEDIR/geoips2_modules
+export PATH=$GEOIPS2_DEPENDENCIES_DIR/bin:$PATH
+
+
+# Convenience variables
+export GEOIPS2=$GEOIPS2_MODULES_DIR/geoips2
+export GEOIPS2_SETUP=$GEOIPS2/setup
