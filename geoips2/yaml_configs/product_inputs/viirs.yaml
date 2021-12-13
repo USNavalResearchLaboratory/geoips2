@@ -1,0 +1,13 @@
+viirs:
+  Infrared:
+    variables: ['I05BT']
+  Infrared-Gray:
+    variables: ['I05BT']
+  IR-BD:
+    variables: ['I05BT']
+  Visible:
+    variables: ['M05Ref', 'SunZenith']
+  Night-Vis:
+    variables: ['DNBRad', 'SunZenith']
+  Night-Vis-IR:
+    variables: ['DNBRad', 'M16BT']

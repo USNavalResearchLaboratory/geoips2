@@ -1,0 +1,5 @@
+sar-spd:
+  windspeed:
+    variables: ['wind_speed_kts']
+  nrcs:
+    variables: ['nrcs']

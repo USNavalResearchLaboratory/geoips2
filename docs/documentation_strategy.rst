@@ -1,16 +1,16 @@
- | # # # DISTRIBUTION STATEMENT A. Approved for public release: distribution unlimited. # # #
- | # # #  # # #
- | # # # Author: # # #
- | # # # Naval Research Laboratory, Marine Meteorology Division # # #
- | # # #  # # #
- | # # # This program is free software: you can redistribute it and/or modify it under # # #
- | # # # the terms of the NRLMMD License included with this program.  If you did not # # #
- | # # # receive the license, see http://www.nrlmry.navy.mil/geoips for more # # #
- | # # # information. # # #
- | # # #  # # #
- | # # # This program is distributed WITHOUT ANY WARRANTY; without even the implied # # #
- | # # # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the # # #
- | # # # included license for more details. # # #
+ | # # # DISTRIBUTION STATEMENT A. Approved for public release: distribution unlimited.
+ | # # # 
+ | # # # Author:
+ | # # # Naval Research Laboratory, Marine Meteorology Division
+ | # # # 
+ | # # # This program is free software: you can redistribute it and/or modify it under
+ | # # # the terms of the NRLMMD License included with this program.  If you did not
+ | # # # receive the license, see http://www.nrlmry.navy.mil/geoips for more
+ | # # # information.
+ | # # # 
+ | # # # This program is distributed WITHOUT ANY WARRANTY; without even the implied
+ | # # # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ | # # # included license for more details.
 
 Documentation and Style Strategy
 ===========================================
@@ -33,6 +33,6 @@ https://google.github.io/styleguide/pyguide.html
 
 bandit, flake8, and pylint are used to enforce appropriate style, security, and syntax usage.
 
-The **geoips2/setup/system_setup** script within the GeoIPS 2.0 release contains instructions for setting up VIM8 with
+The installation script called from **geoips2/README.md** contains steps for setting up VIM8 with
 automated syntax checking and highlighting (including automated flake8, pylint, and bandit error / warning
 highlighting), to help enforce desired style guides.

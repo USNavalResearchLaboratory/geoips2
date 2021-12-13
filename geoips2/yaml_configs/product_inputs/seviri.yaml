@@ -1,0 +1,14 @@
+seviri:
+  Infrared:
+    variables: ['B09BT']
+  Infrared-Gray:
+    variables: ['B09BT']
+  IR-BD:
+    variables: ['B09BT']
+  WV-Lower:
+    variables: ['B06BT']  # B10 abi, 7.3um Lower-level WV; B10 ahi 7.3467um Lower-level WV; B28 modis, B06 seviri IR7.3
+  WV-Upper:
+    variables: ['B05BT']  # B08 abi, 6.2um Upper-level WV; B08 ahi 6.2429um Upper-level WV; B05 seviri IR6.2
+  Visible:
+    variables: ['B01Ref', 'SunZenith']
+

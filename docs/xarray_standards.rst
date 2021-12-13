@@ -1,22 +1,25 @@
- | # # # DISTRIBUTION STATEMENT A. Approved for public release: distribution unlimited. # # #
- | # # #  # # #
- | # # # Author: # # #
- | # # # Naval Research Laboratory, Marine Meteorology Division # # #
- | # # #  # # #
- | # # # This program is free software: you can redistribute it and/or modify it under # # #
- | # # # the terms of the NRLMMD License included with this program.  If you did not # # #
- | # # # receive the license, see http://www.nrlmry.navy.mil/geoips for more # # #
- | # # # information. # # #
- | # # #  # # #
- | # # # This program is distributed WITHOUT ANY WARRANTY; without even the implied # # #
- | # # # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the # # #
- | # # # included license for more details. # # #
+ | # # # DISTRIBUTION STATEMENT A. Approved for public release: distribution unlimited.
+ | # # # 
+ | # # # Author:
+ | # # # Naval Research Laboratory, Marine Meteorology Division
+ | # # # 
+ | # # # This program is free software: you can redistribute it and/or modify it under
+ | # # # the terms of the NRLMMD License included with this program.  If you did not
+ | # # # receive the license, see http://www.nrlmry.navy.mil/geoips for more
+ | # # # information.
+ | # # # 
+ | # # # This program is distributed WITHOUT ANY WARRANTY; without even the implied
+ | # # # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ | # # # included license for more details.
 
 Xarray and NetCDF Metadata Standards
 ======================================
 
 All GeoIPS 2.0 readers read data into xarray Datasets - a separate dataset for each shape/resolution
 of data - and contain standard metadata information for standardized processing.
+
+Readers should return a dictionary of the resulting xarray Datasets, with human readable keys for the
+different datasets (no standard for dictionary key names).
 
 Xarray Standard Variables
 -------------------------
@@ -49,28 +52,41 @@ generation of titles, legends, regridding, etc
 
 The following optional attributes can be used within processing if available.
 
-* 'original_source_filename'
-* 'filename_datetime'
+* 'original_source_filenames' - OPTIONAL
+    * list of strings containing names of all files that went into the current dataset.
+      To ensure consistent output between users, these file names can either be:
+        * base paths, including only the filename and excluding the path altogether, or
+        * full paths with GeoIPS environment variables replacing specific paths
+          (ie, $GEOIPS_OUTDIRS, $GEOIPS2_BASEDIR, etc)
+                                
+* 'filename_datetimes' - OPTIONAL
+    * list of datetime objects corresponding to the datetime listed in each of the
+      'original_source_filenames'. List must be same length as 'original_source_filenames'
+* 'area_definition' - OPTIONAL
+    * specify area_definition current dataset is registered to, if applicable
+* 'registered_dataset' - OPTIONAL
+    * True if current dataset is registered to a specific area_definition, False otherwise
 * 'minimum_coverage' - OPTIONAL
-                       if specified, products will not be generated with
-                       coverage < minimum_coverage
+    * if specified, products will not be generated with
+      coverage < minimum_coverage
 * 'sample_distance_km' - OPTIONAL
-                         if specified, sample_distance_km can be used to produce
-                         a "minimum" sized image.  Web images are often up sampled to
-                         provide a conveniently sized image for viewing with titles/legends,
-                         this allows producing minimal sized "clean" imagery for overlaying
-                         in external viewers (such as the Automated Tropical Cyclone
-                         Forecasting System)
+    * if specified, sample_distance_km can be used to produce
+      a "minimum" sized image.  Web images are often up sampled to
+      provide a conveniently sized image for viewing with titles/legends,
+      this allows producing minimal sized "clean" imagery for overlaying
+      in external viewers (such as the Automated Tropical Cyclone
+      Forecasting System)
 
 
 NetCDF CF Standards
 --------------------------
 All additional attributes should follow the **NetCDF Climate and Forecast (CF) Conventions**.
 
-Names of individual products and variables in output NetCDF files should use **CF Standard Names** when available:
-
-* http://cfconventions.org/Data/cf-standard-names/76/build/cf-standard-name-table.html
-
 Attributes and metadata on output NetCDF files should follow the **CF Metadata Conventions**
 
 * http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html
+
+Names of attributes describing individual products and variables in output NetCDF files should use
+**CF Standard Names** when available:
+
+* http://cfconventions.org/Data/cf-standard-names/76/build/cf-standard-name-table.html

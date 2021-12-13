@@ -1,0 +1,15 @@
+ahi:
+  Infrared:
+    variables: ['B13BT']
+  Infrared-Gray:
+    variables: ['B13BT']
+  IR-BD:
+    variables: ['B13BT']  # JTWC requested Ch13 for ahi IR-BD, I don't know if it is necessary for all IR products.
+  WV:
+    variables: ['B09BT']  # B09 abi, 6.9um Mid-level WV; B09 ahi 6.9410 Mid-level WV; B27 modis 6.535-6.895um
+  WV-Lower:
+    variables: ['B10BT']  # B10 abi, 7.3um Lower-level WV; B10 ahi 7.3467um Lower-level WV; B28 modis, B06 seviri IR7.3
+  WV-Upper:
+    variables: ['B08BT']  # B08 abi, 6.2um Upper-level WV; B08 ahi 6.2429um Upper-level WV; B05 seviri IR6.2
+  Visible:
+    variables: ['B02Ref', 'SunZenith']  # B03 ahi and B02 abi are high res vis

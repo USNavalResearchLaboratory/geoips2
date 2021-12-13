@@ -1,16 +1,16 @@
- | # # # DISTRIBUTION STATEMENT A. Approved for public release: distribution unlimited. # # #
- | # # #  # # #
- | # # # Author: # # #
- | # # # Naval Research Laboratory, Marine Meteorology Division # # #
- | # # #  # # #
- | # # # This program is free software: you can redistribute it and/or modify it under # # #
- | # # # the terms of the NRLMMD License included with this program.  If you did not # # #
- | # # # receive the license, see http://www.nrlmry.navy.mil/geoips for more # # #
- | # # # information. # # #
- | # # #  # # #
- | # # # This program is distributed WITHOUT ANY WARRANTY; without even the implied # # #
- | # # # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the # # #
- | # # # included license for more details. # # #
+ | # # # DISTRIBUTION STATEMENT A. Approved for public release: distribution unlimited.
+ | # # # 
+ | # # # Author:
+ | # # # Naval Research Laboratory, Marine Meteorology Division
+ | # # # 
+ | # # # This program is free software: you can redistribute it and/or modify it under
+ | # # # the terms of the NRLMMD License included with this program.  If you did not
+ | # # # receive the license, see http://www.nrlmry.navy.mil/geoips for more
+ | # # # information.
+ | # # # 
+ | # # # This program is distributed WITHOUT ANY WARRANTY; without even the implied
+ | # # # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ | # # # included license for more details.
 
 Geolocated Information Processing System Version 2.0 (geoips2) documentation
 =============================================================================
@@ -18,6 +18,12 @@ Geolocated Information Processing System Version 2.0 (geoips2) documentation
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+
+
+:doc:`software_requirements_specification`
+------------------------------------------
+Software Requirements Specification
 
 
 :doc:`geoips2_overview`
@@ -35,6 +41,11 @@ Instructions for Anaconda or Virtual Env Python 3 setup
 Example command line calls of representative processing.
 
 
+:doc:`version_control_templates`
+----------------------------------
+Templates for generating informative pull requests and ticket resolutions.
+
+
 :doc:`documentation_strategy`
 ----------------------------------
 Overview of the geoips2 documentation strategy (Sphinx with Napoleon extension / Google docstrings), and formatting
@@ -44,6 +55,11 @@ and style strategy (Google Style Guide, pylint/flake8/bandit code checking).
 :doc:`xarray_standards`
 ----------------------------------
 Metadata and naming conventions within geoips2
+
+
+:doc:`entry_points`
+----------------------------------
+Discussion of entry points used within geoips2
 
 
 Contact Information
