@@ -55,7 +55,7 @@ Setup System Environment Variables
     export GEOIPS2_BASEDIR=$HOME/geoproc
 
     # GEOIPS2_REPO_URL should point to the base URL for git clone commands
-    export $GEOIPS2_REPO_URL=https://github.com/USNavalResearchLaboratory/geoips2
+    export GEOIPS2_REPO_URL=https://github.com/USNavalResearchLaboratory/geoips2
 
     # This config file must be sourced ANY TIME you want to run geoips2
     export GEOIPS2_CONFIG_FILE=$GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup/config_geoips2
