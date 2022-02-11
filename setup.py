@@ -38,8 +38,8 @@ setuptools.setup(
                       'satpy',              # Geostationary readers
                       'numexpr',            # Geostationary readers
                       'pyorbital',          # required by satpy
-                      'rasterio',           # GEOTIFF output
-                      'pyhdf',              # hdf4 readers (MODIS)
+                      #'rasterio',           # GEOTIFF output
+                      #'pyhdf',              # hdf4 readers (MODIS)
                       'h5py',               # hdf5 readers (GMI)
                       'tifffile',
                       'pillow',
