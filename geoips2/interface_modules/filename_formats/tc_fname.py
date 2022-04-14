@@ -33,7 +33,7 @@ filename_type = 'standard'
 
 def tc_fname(area_def, xarray_obj, product_name, coverage, output_type='png', output_type_dir=None,
              product_dir=None, product_subdir=None, source_dir=None, basedir=gpaths['TCWWW'],
-             extra_field=None):
+             extra_field=None, output_dict=None):
 
     from geoips2.sector_utils.utils import is_sector_type
     if area_def and not is_sector_type(area_def, 'tc'):
@@ -65,14 +65,17 @@ def tc_fname(area_def, xarray_obj, product_name, coverage, output_type='png', ou
         intensity = 'unknown'
     extra = '{0:0.1f}'.format(resolution).replace('.', 'p')
     from geoips2.dev.product import get_covg_args_from_product
+
     if 'source_names' in xarray_obj.attrs:
         for source_name in xarray_obj.source_names:
             try:
-                covg_args = get_covg_args_from_product(product_name, source_name)
+                covg_args = get_covg_args_from_product(product_name, source_name,
+                                                       output_dict=output_dict)
             except KeyError:
                 continue
     else:
-        covg_args = get_covg_args_from_product(product_name, xarray_obj.source_name)
+        covg_args = get_covg_args_from_product(product_name, xarray_obj.source_name,
+                                               output_dict=output_dict)
 
     if 'radius_km' in covg_args or ('filename_extra_fields' in xarray_obj.attrs and xarray_obj.filename_extra_fields):
         extra = f"res{extra}"

@@ -19,7 +19,7 @@ The Geolocated Information Processing System (GeoIPS) 2.0 is a generalized proce
 of algorithm and product implementations facilitating consistent and reliable application of specific products
 across a variety of sensors and data types.
 
-.. image:: images/GeoIPS_Functionality_Overview.png
+.. image:: images/geoips2_overview/GeoIPS_Functionality_Overview.png
    :width: 800
 
 GeoIPS 2.0 acts as a toolbox for internal GeoIPS-based product development - all modules are expected to
@@ -36,7 +36,7 @@ Some of the primary benefits / requirements of GeoIPS 2.0 include:
     * Ability to interface with workflow management tools (cylc)
     * Ability to interface with databases (postgres)
 
-.. image:: images/GeoIPS_Structure_Overview.png
+.. image:: images/geoips2_overview/GeoIPS_Structure_Overview.png
    :width: 800
 
 
@@ -47,7 +47,7 @@ The GeoIPS® 2.0 "core" package is responsible for data processing from reading 
 common internal GeoIPS® 2.0 internal format, through algorithm and product application, to outputting user
 configurable data formats (imagery, NetCDF, etc).
 
-.. image:: images/GeoIPS_Processing_Chain.png
+.. image:: images/geoips2_overview/GeoIPS_Processing_Chain.png
    :width: 800
 
 Data collection, data transfers, and product dissemination are all site specific implementations for driving
@@ -77,17 +77,17 @@ The primary processing workflows available at this time include:
 
 Example single_source processing workflow:
 
-.. image:: images/Example_89pct_GEOTIFF_Processing_Workflow.png
+.. image:: images/geoips2_overview/Example_89pct_GEOTIFF_Processing_Workflow.png
    :width: 800
 
 Example overlay processing workflow:
 
-.. image:: images/Example_89pct_Overlay_Processing_Workflow.png
+.. image:: images/geoips2_overview/Example_89pct_Overlay_Processing_Workflow.png
    :width: 800
 
 Potential example of future config based processing workflow
 
-.. image:: images/Example_config_Processing_Workflow.png
+.. image:: images/geoips2_overview/Example_config_Processing_Workflow.png
    :width: 800
 
 
@@ -99,7 +99,7 @@ with no reference to proprietary algorithms and readers from the base open sourc
 
 Example external plugin functionality: 
 
-.. image:: images/Example_DEBRA_Processing_Workflow.png
+.. image:: images/geoips2_overview/Example_DEBRA_Processing_Workflow.png
    :width: 800
 
 GeoIPS 2.0 makes use of Python entry points to install external packages within the geoips2 namespace,

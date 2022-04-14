@@ -233,7 +233,9 @@ def ewsg_netcdf(fnames, metadata_only=False, chans=None, area_def=None, self_reg
 
         xarray_ewsg.attrs['start_datetime'] = Start_date
         xarray_ewsg.attrs['end_datetime']   = End_date
-        xarray_ewsg.attrs['source_name']    = 'gvissr'       #ncdf_file.sensor_name
+        # Goes VARiable (gvar) data is on GOES-12/13 - older GOES satellites were gvissr
+        # ncdf_file.sensor_name is gvissr - I think that is a mistake on Terascan's part - hold out from years ago
+        xarray_ewsg.attrs['source_name']    = 'gvar'
         if ncdf_file.satellite == 'goes-13':
             xarray_ewsg.attrs['platform_name']  = 'ews-g'
         xarray_ewsg.attrs['data_provider']  = 'noaa'

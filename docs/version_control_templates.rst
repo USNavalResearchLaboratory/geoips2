@@ -21,16 +21,19 @@ Pull Request Template
     [ Main testing and installation instructions will be included within the ticket, ]
     [ so the pull request should just include information about what changed within the current repo. ]
     
-    Linked Ticket With Testing Instructions
-    ---------------------------------------
-    GEOIPS2-XX
+    # Testing Instructions
+    GEOIPS2-XX 
+    <Link to ticket with testing instructions, or note that no exhaustive testing is required,>
+    <or include testing instructions directly here if appropriate>
     
-    Summary
-    -------
+    # Summary
     <2-3 sentence summary/bullets of the changes that were made to meet the requirements of the ticket>
+    <these will likely be copied and pasted into the CHANGELOG during the next version release, so make them concise and informative!>
+
+    # Output
+    <Optional output demonstrating functionality - command line or imagery output>
     
-    Individual Commits
-    ------------------
+    # Individual Commits
     Leave the auto-populated commit messages at the bottom of the pull request text.
 
 

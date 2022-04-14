@@ -1,4 +1,4 @@
-gvissr:
+gvar:
   Infrared:
     variables: ['gvar_ch4']
   Infrared-Gray:

@@ -27,6 +27,7 @@ def read_knmi_data(wind_xarray):
     ''' Reformat ascat xarray object appropriately
             variables: latitude, longitude, timestamp, wind_speed_kts, wind_dir_deg_met
             attributes: source_name, platform_name, data_provider, interpolation_radius_of_influence'''
+    wind_xarray.attrs['data_provider'] = 'knmi'
     # Setting standard geoips attributes
     LOG.info('Reading %s data', wind_xarray.source)
     if wind_xarray.source == 'MetOp-C ASCAT':
@@ -41,6 +42,15 @@ def read_knmi_data(wind_xarray):
     elif wind_xarray.source == 'ScatSat-1 OSCAT':
         wind_xarray.attrs['source_name'] = 'oscat'
         wind_xarray.attrs['platform_name'] = 'scatsat-1'
+    elif wind_xarray.source == 'HY-2C HSCAT':
+        wind_xarray.attrs['source_name'] = 'hscat'
+        wind_xarray.attrs['platform_name'] = 'hy-2c'
+        # wind_xarray.attrs['data_provider'] = 'Copyright-2021-EUMETSAT'
+    elif wind_xarray.source == 'HY-2B HSCAT':
+        wind_xarray.attrs['source_name'] = 'hscat'
+        wind_xarray.attrs['platform_name'] = 'hy-2b'
+        # wind_xarray.attrs['data_provider'] = 'Copyright-2021-EUMETSAT'
+
         
     # Pixel size stored as "25.0 km"
     pixel_size = float(wind_xarray.pixel_size_on_horizontal.replace(' km', ''))
@@ -114,7 +124,6 @@ def scat_knmi_winds_netcdf(fnames, metadata_only=False, chans=None, area_def=Non
     wind_xarray.attrs['interpolation_radius_of_influence'] = 'unknown'
     wind_xarray.attrs['sample_distance_km'] = 'unknown'
 
-    wind_xarray.attrs['data_provider'] = 'knmi'
     wind_xarray.attrs['original_source_filenames'] = [basename(fname)]
     wind_xarray.attrs['minimum_coverage'] = 20
 
@@ -124,6 +133,9 @@ def scat_knmi_winds_netcdf(fnames, metadata_only=False, chans=None, area_def=Non
         wind_xarrays = read_knmi_data(wind_xarray)
 
     if hasattr(wind_xarray, 'title_short_name') and 'OSCAT' in wind_xarray.title_short_name:
+        wind_xarrays = read_knmi_data(wind_xarray)
+
+    if hasattr(wind_xarray, 'title_short_name') and 'HSCAT' in wind_xarray.title_short_name:
         wind_xarrays = read_knmi_data(wind_xarray)
 
     for wind_xarray in wind_xarrays.values():

@@ -20,7 +20,8 @@ filename_type = 'standard'
 
 
 def tc_clean_fname(area_def, xarray_obj, product_name, coverage, output_type='png', output_type_dir=None,
-                   product_dir=None, product_subdir=None, source_dir=None, basedir=gpaths['TCWWW']):
+                   product_dir=None, product_subdir=None, source_dir=None, basedir=gpaths['TCWWW'],
+                   output_dict=None):
     ''' Standard type filename module to produce output filenames for "clean" TC products (no gridlines, titles, etc)
     This ensures output ends up in "png_clean" directory, with "-clean" appended to the extra field, to
     avoid conflict with tc_fname based annotated imagery.  Uses "tc_fname" module as a base.
@@ -44,5 +45,4 @@ def tc_clean_fname(area_def, xarray_obj, product_name, coverage, output_type='pn
     return get_filenamer('tc_fname')(area_def, xarray_obj, product_name, coverage, output_type=output_type,
                                      output_type_dir=output_type+'_clean', product_dir=product_dir,
                                      product_subdir=product_subdir, source_dir=source_dir, basedir=basedir,
-                                     extra_field='clean')
-                   
+                                     extra_field='clean', output_dict=output_dict)

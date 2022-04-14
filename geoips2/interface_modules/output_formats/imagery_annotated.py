@@ -34,7 +34,9 @@ def imagery_annotated(area_def,
                       bg_xarray=None,
                       bg_product_name_title=None,
                       bg_datatype_title=None,
-                      remove_duplicate_minrange=None):
+                      remove_duplicate_minrange=None,
+                      title_copyright=None,
+                      title_format=None):
 
     if product_name_title is None:
         product_name_title = product_name
@@ -108,7 +110,9 @@ def imagery_annotated(area_def,
                                                  product_datatype_title=product_datatype_title,
                                                  bg_xarray=bg_xarray,
                                                  bg_product_name_title=bg_product_name_title,
-                                                 bg_datatype_title=bg_datatype_title)
+                                                 bg_datatype_title=bg_datatype_title,
+                                                 title_copyright=title_copyright,
+                                                 title_format=title_format)
     set_title(main_ax, title_string, area_def.y_size)
 
     if mpl_colors_info['colorbar'] is True:

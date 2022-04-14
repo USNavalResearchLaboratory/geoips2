@@ -24,7 +24,7 @@ import logging
 LOG = logging.getLogger(__name__)
 
 
-### Miscellaneous ###
+# Miscellaneous ###
 def deprecation(message):
     import warnings
     warnings.warn(message, DeprecationWarning, stacklevel=2)
@@ -64,7 +64,7 @@ def replace_geoips_paths(fname, replace_paths=None, base_paths=None):
     for gpaths in base_paths:
         for key in gpaths.keys():
             if f'{key}_URL' in gpaths:
-                fname.replace(gpaths[key], gpaths[f'{key}_URL'])
+                fname = fname.replace(gpaths[key], gpaths[f'{key}_URL'])
 
     # Replace full paths with environment variables
     if replace_paths is None:
@@ -93,7 +93,7 @@ def get_required_geoips_xarray_attrs():
     return required_xarray_attrs
 
 
-def output_process_times(process_datetimes, num_jobs=None):
+def output_process_times(process_datetimes, num_jobs=None, job_str='GeoIPS 2'):
     ''' Output process times stored within the process_datetimes dictionary
     Args:
         process_datetimes (dict) : dictionary formatted as follows:
@@ -104,19 +104,22 @@ def output_process_times(process_datetimes, num_jobs=None):
     '''
 
     if 'overall_end' in process_datetimes and 'overall_start' in process_datetimes:
-        LOG.info('Total Time GeoIPS 2: %s Num jobs: %s',
+        LOG.info('Total Time %s: %s Num jobs: %s',
                  process_datetimes['overall_end'] - process_datetimes['overall_start'],
-                 num_jobs)
+                 num_jobs,
+                 job_str)
     for process_name in process_datetimes.keys():
         if process_name in ['overall_start', 'overall_end']:
             continue
         if 'end' in process_datetimes[process_name]:
-            LOG.info('    SUCCESS Process Time GeoIPS 2 Sector %-20s: %s',
+            LOG.info('    SUCCESS Process Time %s: %-20s: %s',
+                     job_str,
                      process_name,
                      process_datetimes[process_name]['end'] - process_datetimes[process_name]['start'])
         elif 'fail' in process_datetimes[process_name]:
-            LOG.info('    FAILED  Process Time GeoIPS 2 Sector %-20s: %s',
+            LOG.info('    FAILED  Process Time %s: %-20s: %s',
+                     job_str,
                      process_name,
                      process_datetimes[process_name]['fail'] - process_datetimes[process_name]['start'])
         else:
-            LOG.info('    MISSING Process Time GeoIPS 2 Sector %s', process_name)
+            LOG.info('    MISSING Process Time %s: %s', job_str, process_name)

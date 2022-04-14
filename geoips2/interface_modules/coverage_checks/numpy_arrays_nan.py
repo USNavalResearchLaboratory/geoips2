@@ -12,17 +12,24 @@
 # # # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # # # included license for more details.
 
-#!/bin/bash
+''' Coverage check routine for masked arrays
+'''
 
-run_procflow $GEOIPS2/tests/data/goes16_20200918_1950/* \
-          --procflow single_source \
-          --reader_name abi_netcdf \
-          --product_name Infrared \
-          --compare_paths "$GEOIPS2/tests/outputs/abi_static/<product>_image" \
-         --output_format imagery_annotated \
-         --filename_format geoips_fname \
-         --sector_list goes16 \
-         --sectorfiles $GEOIPS2/tests/sectors/goes16.yaml
-retval=$?
+import logging
 
-exit $retval
+LOG = logging.getLogger(__name__)
+
+
+def numpy_arrays_nan(xarray_obj, variable_name, area_def=None):
+    ''' Coverage check routine for xarray objects with masked projected arrays.
+
+    Args:
+        xarray_obj (xarray.Dataset) :  xarray object containing variable "variable_name"
+        variable_name (str) : variable name to check percent unmasked
+
+    Returns:
+        float : Percent coverage of variable_name
+    '''
+    
+    from geoips2.data_manipulations.info import percent_not_nan
+    return percent_not_nan(xarray_obj[variable_name])

@@ -30,10 +30,11 @@ def main():
                                  description='Run data file processing')
 
     import sys
-    LOG.info('COMMANDLINE CALL: %s', ' '.join(sys.argv))
+    LOG.info('COMMANDLINE CALL: \n    %s', '\n        '.join([currarg+' \\' for currarg in sys.argv]))
+   
 
     COMMAND_LINE_ARGS = ARGS.__dict__
-    LOG.info(COMMAND_LINE_ARGS)
+    # LOG.info(COMMAND_LINE_ARGS)
     from geoips2.dev.procflow import get_procflow
     LOG.info('GETTING PROCFLOW MODULE')
     PROCFLOW = get_procflow(COMMAND_LINE_ARGS['procflow'])
@@ -41,7 +42,7 @@ def main():
     LOG.info('CALLING PROCFLOW MODULE')
     if PROCFLOW:
         RETVAL = PROCFLOW(COMMAND_LINE_ARGS['filenames'], COMMAND_LINE_ARGS)
-        LOG.info('Completed geoips2 PROCFLOW processing, done!')
+        LOG.info('Completed geoips2 PROCFLOW %s processing, done!', COMMAND_LINE_ARGS['procflow'])
         LOG.info('Starting time: %s', DATETIMES['start'])
         LOG.info('Ending time: %s', datetime.utcnow())
         LOG.info('Total time: %s', datetime.utcnow() - DATETIMES['start'])

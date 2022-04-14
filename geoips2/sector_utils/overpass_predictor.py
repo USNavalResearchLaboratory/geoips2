@@ -90,6 +90,9 @@ def calculate_overpass(tle, observer_lat, observer_lon, date):
     sun = ephem.Sun()
     moon.compute(sector)
     sun.compute(sector)
+    if not sun.rise_time:
+        print('Something went wrong when calculating sun rise and set time!')
+        return None
     sunrise = sun.rise_time.datetime()
     sunset = sun.set_time.datetime()
     if sunset <= sunrise:

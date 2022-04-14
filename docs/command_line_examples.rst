@@ -47,7 +47,7 @@ over the given sector to cache for use in subsequent runs.
               --sector_list goes16 \
               --sectorfiles $GEOIPS2/tests/sectors/goes16.yaml
 
-.. image:: images/20200918.195020.goes-16.abi.Infrared.goes16.45p56.noaa.10p0.png
+.. image:: images/command_line_examples/20200918.195020.goes-16.abi.Infrared.goes16.45p56.noaa.10p0.png
    :width: 600
 
 
@@ -101,7 +101,7 @@ Plot the ABI IR-BD product over TC2020 AL20 Teddy, with
               --trackfiles $GEOIPS2/tests/sectors/bal202020.dat \
               --trackfile_parser bdeck_parser
 
-.. image:: images/20200918_195020_AL202020_abi_goes-16_IR-BD_110kts_100p00_1p0.png
+.. image:: images/command_line_examples/20200918_195020_AL202020_abi_goes-16_IR-BD_110kts_100p00_1p0.png
    :width: 600
 
 .. include:: yaml/20200918_195020_AL202020_abi_goes-16_IR-BD_110kts_100p00_1p0.png.yaml
@@ -127,7 +127,7 @@ Plot the ABI WV product over TC2020 AL20 Teddy, with
               --trackfiles $GEOIPS2/tests/sectors/bal202020.dat \
               --trackfile_parser bdeck_parser
 
-.. image:: images/20200918_195020_AL202020_abi_goes-16_WV_110kts_100p00_1p0.png
+.. image:: images/command_line_examples/20200918_195020_AL202020_abi_goes-16_WV_110kts_100p00_1p0.png
    :width: 600
 
 .. include:: yaml/20200918_195020_AL202020_abi_goes-16_WV_110kts_100p00_1p0.png.yaml

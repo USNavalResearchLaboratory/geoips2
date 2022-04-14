@@ -93,7 +93,9 @@ def is_valid_alg(alg_func_name):
                      'rgb': ['arrays'],
                      'xarray_dict_to_xarray': ['xarray_dict'],
                      'xarray_dict_dict_to_xarray': ['xarray_dict_dict'],
-                     'xarray_dict_to_xarray_dict': ['xarray_dict']}
+                     'xarray_dict_to_xarray_dict': ['xarray_dict'],
+                     'xarray_dict_area_def_to_numpy': ['xarray_dict', 'area_def'],
+                     }
     required_kwargs = {'single_channel': [],
                        'channel_combination': [],
                        'xarray_to_numpy': [],
@@ -101,7 +103,9 @@ def is_valid_alg(alg_func_name):
                        'rgb': [],
                        'xarray_dict_to_xarray': [],
                        'xarray_dict_dict_to_xarray': [],
-                       'xarray_dict_to_xarray_dict': []}
+                       'xarray_dict_to_xarray_dict': [],
+                       'xarray_dict_area_def_to_numpy': [],
+                       }
 
     alg_func_type = get_alg_type(alg_func_name)
 

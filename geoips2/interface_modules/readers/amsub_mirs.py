@@ -279,8 +279,15 @@ def amsub_mirs(fnames, metadata_only=False, chans=None, area_def=None, self_regi
     time_scan=np.zeros((nscan,npix))
     # take time of each scan
     for i in range(nscan):
-        time_scan[i:]='%04d%03d%02d%02d' % (var_all['ScanTime_year'][i],var_all['ScanTime_doy'][i],
-                                            var_all['ScanTime_hour'][i],var_all['ScanTime_minute'][i])
+        yr = var_all['ScanTime_year'][i]
+        dy = var_all['ScanTime_doy'][i]
+        hr = var_all['ScanTime_hour'][i]
+        mn = var_all['ScanTime_minute'][i]
+        try:
+            time_scan[i:]='%04d%03d%02d%02d' % (yr, dy, hr, mn)
+        except ValueError:
+            LOG.info(f'Could not parse time for scan line {i}: YEAR={yr}, DOY={dy}, HOUR={hr}, MINUTE={mn}')
+            continue
     #          ------  setup xarray variables   ------
 
     #namelist_amsub  = ['latitude', 'longitude', 'Chan1_AT', 'Chan2_AT', 'Chan3_AT','Chan4_AT','Chan5_AT',
@@ -299,6 +306,9 @@ def amsub_mirs(fnames, metadata_only=False, chans=None, area_def=None, self_regi
     elif sat_id == 'n18':
         satid = 'noaa-18'
         crtm_name = 'mhs_n18'
+    elif sat_id == 'n20':
+        satid = 'noaa-20'
+        crtm_name = 'mhs_n20'
     elif sat_id == 'ma1':
         satid = 'metop-b'
         crtm_name = 'mhs_metob-b'

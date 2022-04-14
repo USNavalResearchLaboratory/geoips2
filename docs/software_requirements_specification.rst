@@ -101,7 +101,7 @@ The GeoIPS® 2.0 "core" package is responsible for data processing from reading 
 common internal GeoIPS® 2.0 internal format, through algorithm and product application, to outputting user
 configurable data formats (imagery, NetCDF, etc).
 
-.. image:: images/GeoIPS_Processing_Chain.png
+.. image:: images/geoips2_overview/GeoIPS_Processing_Chain.png
    :width: 800
 
 Data collection, data transfers, and product dissemination are all site specific implementations for driving
@@ -170,7 +170,7 @@ processing, benefiting METOC users across the community.  The collaborative natu
 2.2 Product Functions
 ---------------------
 
-.. image:: images/GeoIPS_Structure_Overview.png
+.. image:: images/geoips2_overview/GeoIPS_Structure_Overview.png
    :width: 800
 
 

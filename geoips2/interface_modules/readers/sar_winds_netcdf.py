@@ -86,6 +86,7 @@ def read_sar_data(wind_xarray):
     wind_xarray['sigma'] = xarray.where(wind_xarray.sigma == 0, numpy.nan, wind_xarray.sigma)
     # This is not correct - should be -35 to -20, need to find documentation for deriving NRCS from sigma
     wind_xarray['nrcs'] = 10 * numpy.log10(wind_xarray.sigma)
+    wind_xarray['incident_angle'] = wind_xarray['incid']
     return [wind_xarray]
 
 

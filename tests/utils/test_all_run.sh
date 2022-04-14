@@ -23,6 +23,7 @@
         script_args=""
     else
         script_args=_${script_args// /_}
+        script_args=_${script_args//\//_}
     fi
     script_name=`basename $script_path`
     script_log=${LOGFILE}_${script_name}${script_args}.log
@@ -51,6 +52,8 @@
     missing_product_retval=$?
     grep "FAILED INTERFACE" $script_log >> $LOGFILE 2>&1
     failed_interface_retval=$?
+    grep "DATABASEFAILURE" $script_log >> $LOGFILE 2>&1
+    database_failed_retval=$?
 
 
     grep "SUCCESSFUL COMPARISON DIR:" $script_log >> $LOGFILE 2>&1
@@ -63,24 +66,26 @@
     cylc_setup_retval=$?
     grep "SUCCESSFUL INTERFACE" $script_log >> $LOGFILE 2>&1
     success_interface_retval=$?
+    grep "DATABASESUCCESS" $script_log >> $LOGFILE 2>&1
+    database_success_retval=$?
     
-    if [[ $overall_procflow_retvals[$overall_num] == 0 && $config_retval != 0 && $product_compare_retval != 0 && $cylc_test_retval != 0 && $cylc_setup_retval != 0 && $success_interface_retval != 0 ]]; then
-        echo "  FAILED Log output did not contain SUCCESSFUL COMPARISON DIR, GOODCOMPARE, FOUNDPRODUCT, SETUPSUCCESS, or SUCCESSFUL INTERFACE"
+    if [[ $overall_procflow_retvals[$overall_num] == 0 && $config_retval != 0 && $product_compare_retval != 0 && $cylc_test_retval != 0 && $cylc_setup_retval != 0 && $success_interface_retval != 0 && $database_success_retval != 0 ]]; then
+        echo "  FAILED Log output did not contain SUCCESSFUL COMPARISON DIR, GOODCOMPARE, FOUNDPRODUCT, SETUPSUCCESS, SUCCESSFUL INTERFACE, or DATABASESUCCESS"
         echo "      False 0 return?"
         echo "      Please check test script to ensure output is set properly,"
         echo "      and ensure log output includes valid success strings"
-        echo "  FAILED Log output did not contain SUCCESSFUL COMPARISON DIR, GOODCOMPARE, FOUNDPRODUCT, SETUPSUCCESS, or SUCCESSFUL INTERFACE" >> $LOGFILE 2>&1
+        echo "  FAILED Log output did not contain SUCCESSFUL COMPARISON DIR, GOODCOMPARE, FOUNDPRODUCT, SETUPSUCCESS, SUCCESSFUL INTERFACE, or DATABASESUCCESS" >> $LOGFILE 2>&1
         echo "      False 0 return?" >> $LOGFILE 2>&1
         echo "      Please check test script to ensure output is set properly," >> $LOGFILE 2>&1
         echo "      and ensure log output includes valid success strings" >> $LOGFILE 2>&1
         overall_procflow_retvals[$overall_num]=42
     fi
-    if [[ $overall_procflow_retvals[$overall_num] == 0 && ( $bad_compare_retval == 0 || $missing_compare_retval == 0 || $missing_product_retval == 0 || $failed_interface_retval == 0 ) ]]; then
-        echo "  FAILED Log output DID contain BADCOMPARE, MISSINGCOMPARE, MISSINGPRODUCT, or FAILED INTERFACE"
+    if [[ $overall_procflow_retvals[$overall_num] == 0 && ( $bad_compare_retval == 0 || $missing_compare_retval == 0 || $missing_product_retval == 0 || $failed_interface_retval == 0 || $database_failed_retval == 0 ) ]]; then
+        echo "  FAILED Log output DID contain BADCOMPARE, MISSINGCOMPARE, MISSINGPRODUCT, FAILED INTERFACE, or DATABASEFAILURE"
         echo "      False 0 return?"
         echo "      Please check test script to ensure output is set properly,"
         echo "      and ensure log output includes valid success strings"
-        echo "  FAILED Log output DID contain BADCOMPARE, MISSINGCOMPARE, MISSINGPRODUCT, or FAILED INTERFACE" >> $LOGFILE 2>&1
+        echo "  FAILED Log output DID contain BADCOMPARE, MISSINGCOMPARE, MISSINGPRODUCT, FAILED INTERFACE, or DATABASEFAILURE" >> $LOGFILE 2>&1
         echo "      False 0 return?" >> $LOGFILE 2>&1
         echo "      Please check test script to ensure output is set properly," >> $LOGFILE 2>&1
         echo "      and ensure log output includes valid success strings" >> $LOGFILE 2>&1

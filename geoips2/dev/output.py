@@ -43,41 +43,18 @@ def is_valid_outputter(output_func_name):
             <geoips2_package>.output_formats.<output_func_name>.output_type
 
         Output type one of:
-
-               'image_overlay' : call signature: <output_func_name>(area_def,
-                                                               xarray_obj,
-                                                               product_name,
-                                                               output_fnames,
-                                                               clean_fname=None,
-                                                               product_name_title=None,
-                                                               mpl_colors_info=None,
-                                                               boundaries_info=None,
-                                                               gridlines_info=None,
-                                                               product_datatype_title=None,
-                                                               bg_data=None,
-                                                               bg_mpl_colors_info=None,
-                                                               bg_xarray=None,
-                                                               bg_product_name_title=None,
-                                                               bg_datatype_title=None,
-                                                               remove_duplicate_minrange=None)
-                                 return value:   <list of str containing all successfully produced ouput filenames>
-               'image' : call signature: <func_name>(area_def,
-                                                     xarray_obj,
-                                                     product_name,
-                                                     output_fnames,
-                                                     product_name_title=None,
-                                                     mpl_colors_info=None,
-                                                     existing_image=None)
-                         return value:   <list of str containing all successfully produced ouput filenames>
-               'xarray_data' : call signature: <func_name>(xarray_obj,
-                                                               product_names,  # All product names to include in output data file
-                                                               output_fnames)  # Multiple filenames to produce of the same datafile
-                        return value:   <list of str containing all successfully produced ouput filenames>
-                            
+               'image'
+               'unprojected'
+               'image_overlay'
+               'image_multi'
+               'xarray_dict_to_image'
+               'xarray_dict_data'
+               'standard_metadata'
+               'xarray_data'
 
     Args:
         output_func_name (str) : Name of requested output product function
-                                (ie, 'create_standard_imagery', 'create_standard_metoctiff', 'create_standard_windbarbs', etc)
+                                (ie, 'imagery_annotated', 'unprojected_image', etc)
 
     Returns:
         (bool) : True if 'output_func_name' function has the appropriate call signature
@@ -86,13 +63,17 @@ def is_valid_outputter(output_func_name):
                         does not contain all required keyword arguments
     '''
     required_args = {'image': ['area_def', 'xarray_obj', 'product_name', 'output_fnames'],
+                     'unprojected': ['xarray_obj', 'product_name', 'output_fnames'],
                      'image_overlay': ['area_def', 'xarray_obj', 'product_name', 'output_fnames'],
                      'image_multi': ['area_def', 'xarray_obj', 'product_names', 'output_fnames', 'mpl_colors_info'],
                      'xarray_dict_to_image': ['xarray_datasets', 'area_def', 'varlist'],
                      'xarray_dict_data': ['xarray_objs', 'product_names', 'output_fnames'],
-                     'xarray_data': ['xarray_obj', 'product_names', 'output_fnames']}
+                     'xarray_data': ['xarray_obj', 'product_names', 'output_fnames'],
+                     'standard_metadata': ['area_def', 'xarray_obj', 'metadata_yaml_filename', 'product_filename'],
+                     }
 
     required_kwargs = {'image': ['product_name_title', 'mpl_colors_info', 'existing_image'],
+                       'unprojected': ['product_name_title', 'mpl_colors_info'],
                        'image_overlay': ['product_name_title', 'clean_fname',
                                          'mpl_colors_info', 'clean_fname',
                                          'boundaries_info', 'gridlines_info', 'clean_fname',
@@ -103,7 +84,9 @@ def is_valid_outputter(output_func_name):
                        'image_multi': ['product_name_titles'],
                        'xarray_dict_data': ['append', 'overwrite'],
                        'xarray_dict_to_image': [],
-                       'xarray_data': []}
+                       'xarray_data': [],
+                       'standard_metadata': ['metadata_dir', 'basedir', 'output_dict'],
+                       }
 
     try:
         output_type = get_outputter_type(output_func_name)

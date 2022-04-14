@@ -19,11 +19,23 @@ check_continue() {
     while [ -z "$CONTINUE" ]; do
         echo ""
         echo ""
-        read -r -p "Y or y to continue after $1, next $2? [y/N]: " CONTINUE
+        echo "Just completed '$1'"
+        echo "Next run '$2'"
+        echo ""
+        echo "Y or y to perform '$2'"
+        echo "K or k to skip '$2' but continue to following step"
+        echo "Q or q to quit installation altogether?"
+        read -r -p "[y/k/q]: " CONTINUE
     done
-    if [ $CONTINUE != "y" ] && [ $CONTINUE != "Y" ]; then
+    if [[ $CONTINUE == "q" || $CONTINUE == "Q" ]]; then
         echo "Quitting"
         exit 1
+    elif [[ $CONTINUE == "k" || $CONTINUE == "K" ]]; then
+        echo "Skipping"
+        skip_next="yes" 
+    else
+        echo "Continuing!"
+        skip_next="no"
     fi
 }
 
@@ -35,110 +47,196 @@ fi
     
 
     echo ""
+    echo "NOTE Approximately 30GB disk space / 10GB memory required for complete installation and test"
+    echo ""
+    echo "NOTE Expert users can install piece meal to avoid this time consuming installation process (>1h)"
+    echo "     This full installation installs ALL dependencies from scratch,"
+    echo "     to ensure a consistent environment for successful test returns"
+    echo "     This includes"
+    echo "          * Full Miniconda installation"
+    echo "          * full cartopy coastline and political borders information"
+    echo "          * ABI test datasets"
+    echo "          * vim8 installation with syntax highlighting to encourage following style guide"
+    echo ""
     echo "Confirm environment variables point to desired installation parameters:"
-    echo "GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
-    echo "GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
-    echo "GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
+    echo "    GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
+    echo "    GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
+    echo "    GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
+    echo ""
 
 check_continue "verifying GEOIPS2_BASEDIR and GEOIPS2_CONFIG_FILE and GEOIPS2_ACTIVE_BRANCH" "clone geoips2"
 
-    # Initial clone of geoips2 repo, to obtain setup scripts
-    mkdir -p $GEOIPS2_BASEDIR/geoips2_packages
-    git clone $GEOIPS2_REPO_URL/geoips2.git $GEOIPS2_BASEDIR/geoips2_packages/geoips2
-    
-    git -C $GEOIPS2_BASEDIR/geoips2_packages/geoips2 pull
-    git -C $GEOIPS2_BASEDIR/geoips2_packages/geoips2 checkout -t origin/$GEOIPS2_ACTIVE_BRANCH
-    git -C $GEOIPS2_BASEDIR/geoips2_packages/geoips2 checkout $GEOIPS2_ACTIVE_BRANCH
-    git -C $GEOIPS2_BASEDIR/geoips2_packages/geoips2 pull
+    if [[ "$skip_next" == "no" ]]; then
+        # Initial clone of geoips2 repo, to obtain setup scripts
+        mkdir -p $GEOIPS2_BASEDIR/geoips2_packages
+        git clone $GEOIPS2_REPO_URL/geoips2.git $GEOIPS2_BASEDIR/geoips2_packages/geoips2
+        
+        git -C $GEOIPS2_BASEDIR/geoips2_packages/geoips2 pull
+        git -C $GEOIPS2_BASEDIR/geoips2_packages/geoips2 checkout -t origin/$GEOIPS2_ACTIVE_BRANCH
+        git -C $GEOIPS2_BASEDIR/geoips2_packages/geoips2 checkout $GEOIPS2_ACTIVE_BRANCH
+        git -C $GEOIPS2_BASEDIR/geoips2_packages/geoips2 pull
 
-    ls -ld $GEOIPS2_BASEDIR/geoips2_packages/*
-    
-    echo ""
-    echo "Confirm environment variables point to desired installation parameters:"
-    echo "GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
-    echo "GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
-    echo "GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
-    echo "which conda (should not exist yet!): "`which conda`
+        ls -ld $GEOIPS2_BASEDIR/geoips2_packages/*
+        
+        echo ""
+        echo "Confirm environment variables point to desired installation parameters:"
+        echo "    GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
+        echo "    GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
+        echo "    GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
+        echo "    which conda (should not exist yet!): "`which conda`
+    fi
 
 check_continue "cloning geoip2 repo" "install conda"
 
-    # Install conda
-    # Do not initialize your shell at the end, to allow switching between versions!!!
-    $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh conda_install
+    if [[ "$skip_next" == "no" ]]; then
+        # Install conda
+        # Do not initialize your shell at the end, to allow switching between versions!!!
+        $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh conda_install
 
-    $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh conda_link
-    # Activate current conda base environment - note geoips2_conda doesn't exist yet, but that is ok.
-    # We need to at least point to "new" python and conda
-    source $GEOIPS2_CONFIG_FILE
+        $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh conda_link
+        # Activate current conda base environment - note geoips2_conda doesn't exist yet, but that is ok.
+        # We need to at least point to "new" python and conda
+        source $GEOIPS2_CONFIG_FILE
 
-    echo ""
-    echo "Confirm environment variables point to desired installation parameters:"
-    echo "GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
-    echo "GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
-    echo "GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
-    echo "which conda (point to geoips2_dependencies/miniconda3): "`which conda`
-    echo "which pip (point to geoips2_dependencies/miniconda3):   "`which conda`
-    echo "which python (point to geoips2_dependencies/miniconda3):     "`which python`
+        echo ""
+        echo "Confirm environment variables point to desired installation parameters:"
+        echo "    GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
+        echo "    GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
+        echo "    GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
+        echo "    which conda (point to geoips2_dependencies/miniconda3): "`which conda`
+        echo "    which pip (point to geoips2_dependencies/miniconda3):   "`which conda`
+        echo "    which python (point to geoips2_dependencies/miniconda3):     "`which python`
+    fi
 
 check_continue "installing conda (should point to $GEOIPS2_BASEDIR/geoips2_dependencies/miniconda3)" "create geoips2_conda_env"
 
-    # Create geoips2 conda environment
-    $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh conda_update  # only for a fresh Miniconda install
-    $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh create_geoips2_conda_env
-    source $GEOIPS2_CONFIG_FILE
-    echo ""
-    echo "Confirm environment variables point to desired installation parameters:"
-    echo "GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
-    echo "GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
-    echo "GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
-    echo "which conda (should point to geoips2_dependencies/bin): "`which conda`
-    echo "which python (should point to miniconda3 envs/geoips2_conda): "`which python`
+    if [[ "$skip_next" == "no" ]]; then
+        # Create geoips2 conda environment
+        $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh conda_update  # only for a fresh Miniconda install
+        $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh create_geoips2_conda_env
+        # Now we can use source $GEOIPS2_CONFIG_FILE
+        source $GEOIPS2_CONFIG_FILE
+        echo ""
+        echo "Confirm environment variables point to desired installation parameters:"
+        echo "    GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
+        echo "    GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
+        echo "    GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
+        echo "    which conda (should point to geoips2_dependencies/bin): "`which conda`
+        echo "    which python (should point to miniconda3 envs/geoips2_conda): "`which python`
+    fi
 
 check_continue "creating geoips2_conda_env (should point to $GEOIPS2_BASEDIR/geoips2_dependencies/miniconda3/envs/geoips2_conda)" "install geoips2 and dependencies"
 
-    # Actually install geoips2 and all dependencies (cartopy, etc)
-    $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh install_geoips2
-    $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh install_cartopy_offlinedata
+    if [[ "$skip_next" == "no" ]]; then
+        # Actually install geoips2 and all dependencies (cartopy, etc)
+        source $GEOIPS2_CONFIG_FILE
+        $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh install_geoips2
+        echo ""
+        echo "Confirm environment variables point to desired installation parameters:"
+        echo "    GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
+        echo "    GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
+        echo "    GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
+        echo "    which conda (should point to geoips2_dependencies/bin): "`which conda`
+        echo "    which python (should point to miniconda3 envs/geoips2_conda): "`which python`
+    fi
 
-    echo ""
-    echo "Confirm environment variables point to desired installation parameters:"
-    echo "GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
-    echo "GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
-    echo "GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
-    echo "which conda (should point to geoips2_dependencies/bin): "`which conda`
-    echo "which python (should point to miniconda3 envs/geoips2_conda): "`which python`
+check_continue "install geoips2 and dependencies" "Download cartopy natural earth data (REQUIRED for successful test returns, but takes ~10min and ~16GB to download)"
 
-check_continue "installing geoips2 and dependencies" "install external dependencies"
+    if [[ "$skip_next" == "no" ]]; then
 
-    source $GEOIPS2_CONFIG_FILE
-    $GEOIPS2/setup_geoips2.sh setup_seviri
-    $GEOIPS2/setup_geoips2.sh setup_rclone # abi/ahi ingest
-    $GEOIPS2/setup_geoips2.sh setup_vim8  # vim syntax highlighting
-    $GEOIPS2/setup_geoips2.sh setup_vim8_plugins  # vim syntax highlighting
+        source $GEOIPS2_CONFIG_FILE
+        $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh download_cartopy_natural_earth
 
-    echo ""
-    echo "Confirm environment variables point to desired installation parameters:"
-    echo "GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
-    echo "GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
-    echo "GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
-    echo "which conda (should point geoips2_dependencies/bin): "`which conda`
-    echo "which python (should point to miniconda3 envs/geoips2_conda): "`which python`
+        echo ""
+        echo "Confirm environment variables point to desired installation parameters:"
+        echo "    GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
+        echo "    GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
+        echo "    GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
+        echo "    which conda (should point to geoips2_dependencies/bin): "`which conda`
+        echo "    which python (should point to miniconda3 envs/geoips2_conda): "`which python`
+    fi
 
-check_continue "installing external dependencies" "run basic test script"
+check_continue "Downloading cartopy natural earth data" "Link cartopy natural earth data to ~/.local/share/cartopy (to ensure cartopy uses the correct shapefiles in order for test outputs to match exactly)"
 
-    $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh setup_abi_test_data
-    $GEOIPS2/tests/test_base_install.sh
-    retval=$?
+    if [[ "$skip_next" == "no" ]]; then
+        source $GEOIPS2_CONFIG_FILE
+        $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh link_cartopy_natural_earth
 
-    echo ""
-    echo "full return: $retval"
+        echo ""
+        echo "Confirm environment variables point to desired installation parameters:"
+        echo "    GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
+        echo "    GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
+        echo "    GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
+        echo "    which conda (should point to geoips2_dependencies/bin): "`which conda`
+        echo "    which python (should point to miniconda3 envs/geoips2_conda): "`which python`
+    fi
 
-check_continue "running basic test script" "run full test script"
+check_continue "installing cartopy data" "install rclone (REQUIRED for test script)"
+    if [[ "$skip_next" == "no" ]]; then
+        source $GEOIPS2_CONFIG_FILE
+        $GEOIPS2/setup_geoips2.sh setup_rclone # abi/ahi ingest
+        echo ""
+        echo "Confirm environment variables point to desired installation parameters:"
+        echo "    GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
+        echo "    GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
+        echo "    GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
+        echo "    which conda (should point geoips2_dependencies/bin): "`which conda`
+        echo "    which python (should point to miniconda3 envs/geoips2_conda): "`which python`
+    fi
 
-    $GEOIPS2/tests/test_all.sh
-    retval=$?
+check_continue "installing rclone" "OPTIONAL install seviri libraries (required for seviri HRIT processing)"
+    if [[ "$skip_next" == "no" ]]; then
+        source $GEOIPS2_CONFIG_FILE
+        $GEOIPS2/setup_geoips2.sh setup_seviri
+        echo ""
+        echo "Confirm environment variables point to desired installation parameters:"
+        echo "    GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
+        echo "    GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
+        echo "    GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
+        echo "    which conda (should point geoips2_dependencies/bin): "`which conda`
+        echo "    which python (should point to miniconda3 envs/geoips2_conda): "`which python`
+    fi
 
-    echo ""
-    echo "full return: $retval"
+check_continue "installing seviri libraries" "OPTIONAL install vim8"
 
-check_continue "running test scripts"
+    if [[ "$skip_next" == "no" ]]; then
+        source $GEOIPS2_CONFIG_FILE
+        $GEOIPS2/setup_geoips2.sh setup_vim8  # vim syntax highlighting
+
+        echo ""
+        echo "Confirm environment variables point to desired installation parameters:"
+        echo "    GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
+        echo "    GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
+        echo "    GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
+        echo "    which conda (should point geoips2_dependencies/bin): "`which conda`
+        echo "    which python (should point to miniconda3 envs/geoips2_conda): "`which python`
+    fi
+
+check_continue "installing vim8" "OPTIONAL install vim8 plugins (updates ~/.vim and ~/.vimrc to set up syntax highlighting based on geoips2 style guide)"
+
+    if [[ "$skip_next" == "no" ]]; then
+        source $GEOIPS2_CONFIG_FILE
+        $GEOIPS2/setup_geoips2.sh setup_vim8_plugins  # vim syntax highlighting
+
+        echo ""
+        echo "Confirm environment variables point to desired installation parameters:"
+        echo "    GEOIPS2_BASEDIR:       $GEOIPS2_BASEDIR"
+        echo "    GEOIPS2_CONFIG_FILE:   $GEOIPS2_CONFIG_FILE"
+        echo "    GEOIPS2_ACTIVE_BRANCH: $GEOIPS2_ACTIVE_BRANCH"
+        echo "    which conda (should point geoips2_dependencies/bin): "`which conda`
+        echo "    which python (should point to miniconda3 envs/geoips2_conda): "`which python`
+    fi
+
+check_continue "installing geoips2, cartopy data, dependencies, and external packages" "run basic test script"
+
+    if [[ "$skip_next" == "no" ]]; then
+        source $GEOIPS2_CONFIG_FILE
+        $GEOIPS2_BASEDIR/geoips2_packages/geoips2/setup_geoips2.sh setup_abi_test_data
+        $GEOIPS2/tests/test_base_install.sh
+        retval=$?
+
+        echo ""
+        echo "full return: $retval"
+    fi
+
+check_continue "Installing and testing geoips2" "Done with base installation and test!"

@@ -20,7 +20,7 @@ LOG = logging.getLogger(__name__)
 cmap_type = 'builtin_matplotlib_cmap'
 
 
-def matplotlib_linear_norm(data_range, cmap_name='Greys', cbar_label=None, create_colorbar=True):
+def matplotlib_linear_norm(data_range, cmap_name='Greys', cbar_label=None, create_colorbar=True, cbar_ticks=None):
     ''' Set the matplotlib colors information appropriately, for use in colorbar and image production.
 
     Args:
@@ -28,14 +28,16 @@ def matplotlib_linear_norm(data_range, cmap_name='Greys', cbar_label=None, creat
         cmap_name (str) : Default 'Greys' - specify the standard matplotlib colormap.
         cbar_label (str) : Default None - If specified, use cbar_label string as colorbar label.
         create_colorbar (bool) : Default True - Specify whether the image should contain a colorbar or not.
+        cbar_ticks (list) : Default None - Specify explicit list of ticks to include for colorbar.
+                                     None indicates ticks at int(min) and int(max) values
 
     Returns:
         mpl_colors_info (dict) Specifies matplotlib Colors parameters for use in both plotting and colorbar generation
                                 See geoips2.image_utils.mpl_utils.create_colorbar for field descriptions.
     '''
 
-    min_val = int(data_range[0])
-    max_val = int(data_range[1])
+    min_val = data_range[0]
+    max_val = data_range[1]
 
     from matplotlib import cm
     # cmap = cm.ScalarMappable(norm=colors.NoNorm(), cm.get_cmap(cmap_name))
@@ -44,7 +46,10 @@ def matplotlib_linear_norm(data_range, cmap_name='Greys', cbar_label=None, creat
     LOG.info('Setting norm')
     from matplotlib.colors import Normalize
     mpl_norm = Normalize(vmin=min_val, vmax=max_val)
-    mpl_ticks = [min_val, max_val]
+    if cbar_ticks:
+        mpl_ticks = cbar_ticks
+    else:
+        mpl_ticks = [int(min_val), int(max_val)]
 
     # Must be uniform or proportional, None not valid for Python 3
     cbar_spacing = 'proportional'

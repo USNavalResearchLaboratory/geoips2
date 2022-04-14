@@ -43,7 +43,7 @@ def find_config(subpackage_name, config_basename, txt_suffix='.yaml'):
                              package_name,
                              subpackage_name,
                              config_basename+txt_suffix)
-        LOG.info('Trying %s', fname)
+        # LOG.info('Trying %s', fname)
         if os.path.exists(fname):
             LOG.info('FOUND %s', fname)
             text_fname = fname
@@ -52,7 +52,7 @@ def find_config(subpackage_name, config_basename, txt_suffix='.yaml'):
                              package_name,
                              subpackage_name,
                              config_basename+txt_suffix)
-        LOG.info('Trying %s', fname)
+        # LOG.info('Trying %s', fname)
         if os.path.exists(fname):
             LOG.info('FOUND %s', fname)
             text_fname = fname

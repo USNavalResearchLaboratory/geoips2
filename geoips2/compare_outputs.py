@@ -16,7 +16,7 @@
 
 import subprocess
 import logging
-from os.path import basename, join, splitext, dirname, isdir, isfile
+from os.path import basename, join, splitext, dirname, isdir, isfile, exists
 LOG = logging.getLogger(__name__)
 
 
@@ -107,14 +107,31 @@ def gunzip_product(fname):
     Returns:
         str: Filename of file after gunzipping
     '''
+    LOG.info('**** Gunzipping product for comparisons - will gzip after comparing')
+    LOG.info("gunzip %s", fname)
     subprocess.call(['gunzip', fname])
+    return splitext(fname)[0]
+
+
+def gzip_product(fname):
+    ''' gzip file fname
+
+    Args:
+        fname (str) : File to gzip
+
+    Returns:
+        str: Filename of file after gzipping
+    '''
+    LOG.info('**** Gzipping product - leave things as we found them')
+    LOG.info("gzip %s", fname)
+    subprocess.call(['gzip', fname])
     return splitext(fname)[0]
 
 
 def get_out_diff_fname(compare_product, output_product, ext=None):
     from os import makedirs, getenv
     from os.path import exists
-    diffdir = join(dirname(compare_product), 'diff_test_output_{0}'.format(getenv('USER')))
+    diffdir = join(dirname(compare_product), 'diff_test_output_dir_{0}'.format(getenv('USER')))
     out_diff_fname = join(diffdir, 'diff_test_output_'+basename(output_product))
     if not exists(diffdir):
         makedirs(diffdir)
@@ -367,6 +384,16 @@ def test_product(output_product, compare_product, goodcomps, badcomps, compare_s
     return goodcomps, badcomps, compare_strings
 
 
+def print_gunzip_to_file(fobj, gunzip_fname):
+    if exists(f'{gunzip_fname}.gz') and not exists(f'{gunzip_fname}'):
+        fobj.write(f'gunzip -v {gunzip_fname}.gz\n')
+
+
+def print_gzip_to_file(fobj, gzip_fname):
+    if exists(f'{gzip_fname}.gz') and not exists(f'{gzip_fname}'):
+        fobj.write(f'gzip -v {gzip_fname}\n')
+
+
 def compare_outputs(compare_path, output_products, test_product_func=None):
     ''' Compare the "correct" imagery found in comparepath with the list of current output_products
 
@@ -416,7 +443,9 @@ def compare_outputs(compare_path, output_products, test_product_func=None):
         LOG.info('*** COMPARE  %s ***', basename(output_product))
         LOG.info('********************************************************************************************')
 
+        rezip = False
         if is_gz(output_product):
+            rezip = True
             output_product = gunzip_product(output_product)
 
         if basename(output_product) in compare_basenames:
@@ -430,6 +459,11 @@ def compare_outputs(compare_path, output_products, test_product_func=None):
         else:
             missingcomps += [output_product]
         final_output_products += [output_product]
+
+        # Make sure we leave things as we found them
+        if rezip is True:
+            gzip_product(output_product)
+
         LOG.info('')
     LOG.info('********************************************************************************************')
     LOG.info('********************************************************************************************')
@@ -444,7 +478,7 @@ def compare_outputs(compare_path, output_products, test_product_func=None):
 
     from os import makedirs, getenv
     from os.path import exists
-    diffdir = join(compare_path, 'diff_test_output_{0}'.format(getenv('USER')))
+    diffdir = join(compare_path, 'diff_test_output_dir_{0}'.format(getenv('USER')))
     if not exists(diffdir):
         makedirs(diffdir)
 
@@ -473,7 +507,9 @@ def compare_outputs(compare_path, output_products, test_product_func=None):
                         
                 # For display purposes - tifs are easier to view
                 out_fname = basename(goodcomp).replace('.jif', '.tif')
+                print_gunzip_to_file(fobj, goodcomp)
                 fobj.write('cp {0} {1}/GOODCOMPARE/{2}\n'.format(goodcomp, diffdir, out_fname))
+                print_gzip_to_file(fobj, goodcomp)
 
     if len(missingcomps) > 0:
         fname_cp = join(diffdir, 'cp_MISSINGCOMPARE.txt')
@@ -482,13 +518,17 @@ def compare_outputs(compare_path, output_products, test_product_func=None):
         print('# source {0}'.format(fname_cp))
         with open(fname_cp, 'w') as fobj:
             for missingcomp in missingcomps:
+                print_gunzip_to_file(fobj, missingcomp)
                 fobj.write('cp -v {0} {1}/../\n'.format(missingcomp, diffdir))
+                print_gzip_to_file(fobj, missingcomp)
         with open(fname_missingcompcptest, 'w') as fobj:
             fobj.write('mkdir {0}/MISSINGCOMPARE\n'.format(diffdir))
             for missingcomp in missingcomps:
                 # For display purposes - tifs are easier to view
                 out_fname = basename(missingcomp).replace('.jif', '.tif')
+                print_gunzip_to_file(fobj, missingcomp)
                 fobj.write('cp -v {0} {1}/MISSINGCOMPARE/{2}\n'.format(missingcomp, diffdir, out_fname))
+                print_gzip_to_file(fobj, missingcomp)
 
     if len(missingproducts) > 0:
         fname_rm = join(diffdir, 'rm_MISSINGPRODUCTS.txt')
@@ -503,7 +543,9 @@ def compare_outputs(compare_path, output_products, test_product_func=None):
             for missingproduct in missingproducts:
                 # For display purposes - tifs are easier to view
                 out_fname = basename(missingproduct).replace('.jif', '.tif')
+                print_gunzip_to_file(fobj, missingproduct)
                 fobj.write('cp -v {0} {1}/MISSINGPRODUCTS/{2}\n'.format(missingproduct, diffdir, out_fname))
+                print_gzip_to_file(fobj, missingproduct)
 
     if len(badcomps) > 0:
         fname_cp = join(diffdir, 'cp_BADCOMPARES.txt')
@@ -516,8 +558,9 @@ def compare_outputs(compare_path, output_products, test_product_func=None):
                 if compare_strings is not None:
                     for compare_string in compare_strings:
                         badcomp = badcomp.replace(compare_string, '')
-
+                print_gunzip_to_file(fobj, badcomp)
                 fobj.write('cp -v {0} {1}/../\n'.format(badcomp, diffdir))
+                print_gzip_to_file(fobj, badcomp)
         with open(fname_badcptest, 'w') as fobj:
             fobj.write('mkdir {0}/BADCOMPARES\n'.format(diffdir))
             for badcomp in badcomps:
@@ -527,7 +570,9 @@ def compare_outputs(compare_path, output_products, test_product_func=None):
                 badcomp = badcomp.replace('GEOTIFF ', '')
                 # For display purposes - tifs are easier to view
                 out_fname = basename(badcomp).replace('.jif', '.tif')
+                print_gunzip_to_file(fobj, badcomp)
                 fobj.write('cp {0} {1}/BADCOMPARES/{2}\n'.format(badcomp, diffdir, out_fname))
+                print_gzip_to_file(fobj, badcomp)
 
     retval = 0
     if len(badcomps) != 0:

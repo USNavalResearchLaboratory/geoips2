@@ -24,7 +24,7 @@ LOG = logging.getLogger(__name__)
 alg_func_type = 'list_numpy_to_numpy'
 
 
-def windbarbs(arrays, output_data_range, input_units=None, output_units=None,
+def windbarbs(arrays, output_data_range=None, input_units=None, output_units=None,
               min_outbounds='crop', max_outbounds='crop', norm=False, inverse=False):
     ''' Data manipulation steps for "windbarbs" product algorithm.
 
@@ -69,6 +69,8 @@ def windbarbs(arrays, output_data_range, input_units=None, output_units=None,
 
     import numpy
     spd = arrays[0]
+    if output_data_range is None:
+        output_data_range = (spd.min(), spd.max)
     direction = arrays[1]
     if len(arrays) > 2:
         rain_flag = arrays[2]

@@ -18,11 +18,17 @@ else
     package_name=$1
 fi
 
+if [[ "$2" == "" ]]; then
+    basedir=$GEOIPS2_BASEDIR
+else
+    basedir=$2
+fi
+
 overall_start=`date +%s`
 
 dtstr=`date -u +%Y%m%d.%H%M%S`
 
-LOGFILE=$GEOIPS2_BASEDIR/test_data/logs/`date -u +%Y%m%d`/${dtstr}_${package_name}/test_all_${package_name}.log
+LOGFILE=$basedir/test_data/logs/`date -u +%Y%m%d`/${dtstr}_${package_name}/test_all_${package_name}.log
 mkdir -p `dirname $LOGFILE`
 
 echo `date` Running pre, log: $LOGFILE

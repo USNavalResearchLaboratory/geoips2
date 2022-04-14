@@ -24,7 +24,7 @@ LOG = logging.getLogger(__name__)
 alg_func_type = 'list_numpy_to_numpy'
 
 
-def pmw_37pct(arrays, output_data_range, min_outbounds='crop', max_outbounds='mask', norm=False, inverse=False):
+def pmw_37pct(arrays, output_data_range=None, min_outbounds='crop', max_outbounds='mask', norm=False, inverse=False):
     ''' Data manipulation steps for "37pct" product algorithm.
 
     This algorithm expects Brightness Temperatures in units of degrees Kelvin, and returns degrees Kelvin
@@ -43,6 +43,9 @@ def pmw_37pct(arrays, output_data_range, min_outbounds='crop', max_outbounds='ma
     v37 = arrays[1]
 
     out = (2.15*v37)-(1.15*h37)
+
+    if output_data_range is None:
+        output_data_range = [230.0, 280.0]
 
     from geoips2.data_manipulations.corrections import apply_data_range
     data = apply_data_range(out,

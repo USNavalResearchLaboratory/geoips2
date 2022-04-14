@@ -30,57 +30,6 @@ LOG = logging.getLogger(__name__)
 #                        'nineteen', 'twenty', 'twenty-one']
 
 
-def tc_fname_metadata(area_def, xarray_obj, product_filename,
-                      metadata_dir='metadata', metadata_type='sector_information'):
-
-    allowed_metadata_types = ['sector_information', 'archer_information', 'storm_information']
-
-    if metadata_type not in allowed_metadata_types:
-        raise TypeError('Unknown metadata type {0}, allowed {1}'.format(metadata_type, allowed_metadata_types))
-
-    basedir = gpaths['TCWWW']
-    tc_year = int(area_def.sector_info['storm_year'])
-    tc_basin = area_def.sector_info['storm_basin']
-    tc_stormnum = int(area_def.sector_info['storm_num'])
-    metadata_type = 'sector_information'
-    metadata_datetime = xarray_obj.start_datetime
-    metadata_dir = metadata_dir
-
-    from os.path import join as pathjoin
-    from os.path import basename
-    from geoips2.interface_modules.filename_formats.utils.tc_file_naming import tc_storm_basedir
-    metadata_yaml_dirname = pathjoin(tc_storm_basedir(basedir, tc_year, tc_basin, tc_stormnum),
-                                     metadata_dir,
-                                     metadata_type,
-                                     metadata_datetime.strftime('%Y%m%d'))
-    metadata_yaml_basename = basename(product_filename)+'.yaml'
-
-    return pathjoin(metadata_yaml_dirname, metadata_yaml_basename)
-
-
-def produce_sector_metadata(area_def, xarray_obj, product_filename, metadata_dir='metadata'):
-    ''' Produce metadata yaml file of sector information associated with the final_product
-    Args:
-        area_def (AreaDefinition) : Pyresample AreaDefintion object
-        final_product (str) : Product that is associated with the passed area_def
-        metadata_dir (str) : DEFAULT 'metadata' Subdirectory name for metadata (using non-default allows for
-                                                non-operational outputs)
-
-    Returns:
-        (str) : Metadata yaml filename, if one was produced.
-    '''
-    from geoips2.interface_modules.output_formats.utils.metadata import output_metadata_yaml
-
-    metadata_yaml_filename = tc_fname_metadata(area_def, xarray_obj, product_filename, metadata_dir,
-                                               metadata_type='sector_information')
-    # os.path.join does not take a list, so "*" it
-    # product_partial_path = product_filename.replace(gpaths['TCWWW'], 'https://www.nrlmry.navy.mil/tcdat')
-    from geoips2.dev.utils import replace_geoips_paths
-    product_partial_path = replace_geoips_paths(product_filename)
-    # product_partial_path = pathjoin(*final_product.split('/')[-5:-1]+[basename(final_product)])
-    return output_metadata_yaml(metadata_yaml_filename, area_def, xarray_obj, product_partial_path)
-
-
 def create_tc_sector_info_dict(clat, clon, synoptic_time, storm_year, storm_basin, storm_num, aid_type=None,
                                storm_name=None, final_storm_name=None,
                                deck_line=None, source_sector_file=None,
@@ -275,4 +224,3 @@ def interpolate_storm_location(interp_dt, longitudes, latitudes, synoptic_times)
     ''' Interpolate the storm location at a specific time based on a list of known locations and times'''
     LOG.info('interp_dt: %s\nlatitudes:\n%s\nlongitudes:\n%s\nsynoptic_times:\n%s',
              interp_dt, latitudes, longitudes, synoptic_times)
-    # from IPython import embed as shell; shell()

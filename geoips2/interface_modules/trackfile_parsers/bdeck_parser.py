@@ -131,8 +131,8 @@ def parse_bdeck_line(line, source_filename=None, storm_year=None,
     # This works with G (GeoIPS) Deck files.  Need separate parser for B decks (best tracks)
     # parts = line.split(',', 40)
     parts = [part.strip() for part in line.split(',')]
-    if len(parts) < 38:
-        raise ValueError('Incorrectly formatted deck file - fewer than 38 fields')
+    if len(parts) != 38 and len(parts) != 30 and len(parts) != 40 and len(parts) != 42:
+        raise ValueError('Incorrectly formatted deck file - must have either 30 or 38 or 42 fields')
     fields = {}
     fields['deck_line'] = line.strip()
     fields['storm_basin'] = parts[0]

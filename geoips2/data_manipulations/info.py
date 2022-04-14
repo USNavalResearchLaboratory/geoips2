@@ -29,3 +29,15 @@ def percent_unmasked(data_array):
     '''
 
     return 100 * (float(numpy.ma.count(data_array)) / data_array.size)
+
+
+def percent_not_nan(data_array):
+    ''' Specify coverage based on current data type
+        Parameters:
+            data_array (numpy.array) : Final processed array from which to determine coverage, invalid values
+                                        specified by "numpy.nan"
+        Returns:
+            (float) representing percent coverage
+    '''
+
+    return 100.0 * (1.0 - (numpy.count_nonzero(numpy.isnan(data_array)) / data_array.size))

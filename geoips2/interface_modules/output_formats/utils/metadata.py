@@ -15,10 +15,16 @@
 ''' Output metadata related to the current product / sector '''
 import logging
 
+from geoips2.sector_utils.tc_tracks import produce_sector_metadata
+from geoips2.sector_utils.utils import is_sector_type
+from geoips2.dev.utils import replace_geoips_paths
+from geoips2.sector_utils.yaml_utils import write_yamldict
+
 LOG = logging.getLogger(__name__)
 
 
-def produce_all_sector_metadata(final_products, area_def, xarray_obj, metadata_dir='metadata'):
+def produce_all_sector_metadata(final_products, area_def, xarray_obj, metadata_dir='metadata',
+                                filename_formats_kwargs=None):
     ''' Produce metadata for all products listed in "final_products" - all products should cover area_def region
 
     Args:
@@ -31,20 +37,26 @@ def produce_all_sector_metadata(final_products, area_def, xarray_obj, metadata_d
     Returns:
         (list) : list of strings, containing full paths to new YAML metadata files
     '''
+
     yaml_products = []
-    from geoips2.sector_utils.utils import is_sector_type
+
+    kwargs = {}
+    if filename_formats_kwargs and 'tc_fname_metadata' in filename_formats_kwargs \
+       and 'basedir' in filename_formats_kwargs['tc_fname_metadata']:
+        kwargs = {'basedir': filename_formats_kwargs['tc_fname_metadata']['basedir']}
+
     if is_sector_type(area_def, 'tc'):
         for final_product in final_products:
             if 'yaml' in final_product:
                 continue
-            from geoips2.sector_utils.tc_tracks import produce_sector_metadata
             curr_metadata_dir = metadata_dir
             if '_dev' not in metadata_dir and '_dev' in final_product:
                 curr_metadata_dir = metadata_dir+'_dev'
             yaml_products += produce_sector_metadata(area_def,
                                                      xarray_obj,
                                                      final_product,
-                                                     metadata_dir=curr_metadata_dir)
+                                                     metadata_dir=curr_metadata_dir,
+                                                     **kwargs)
     return yaml_products
 
 
@@ -59,7 +71,6 @@ def output_metadata_yaml(metadata_fname, area_def, xarray_obj, productname=None)
     Returns:
         (str) : Path to metadata filename if successfully produced.
     '''
-    from geoips2.dev.utils import replace_geoips_paths
     sector_info = area_def.sector_info.copy()
 
     if hasattr(area_def, 'sector_type') and 'sector_type' not in sector_info:
@@ -82,7 +93,6 @@ def output_metadata_yaml(metadata_fname, area_def, xarray_obj, productname=None)
     if 'original_source_filenames' in xarray_obj.attrs.keys():
         sector_info['original_source_filenames'] = xarray_obj.original_source_filenames
 
-    from geoips2.sector_utils.yaml_utils import write_yamldict
     returns = write_yamldict(sector_info, metadata_fname, force=True)
     if returns:
         LOG.info('METADATASUCCESS Writing %s', metadata_fname)

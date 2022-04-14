@@ -12,9 +12,9 @@
 # # # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # # # included license for more details.
 
-''' Data manipulation steps for standard Lunar-Reflectance imagery from VIIRS DNB
+''' Data manipulation steps for standard Night Visible imagery from VIIRS DNB
 
-    This algorithm expects reflectances, between 0 and 1, uncorrected for Solar Zenith angle.
+    This algorithm expects reflectances, between 0 and 1, uncorrected for lunar illumination.
 '''
 import logging
 

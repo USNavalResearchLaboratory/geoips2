@@ -25,32 +25,54 @@ setuptools.setup(
     name='geoips2',
     version=version,
     packages=setuptools.find_packages(),
-    install_requires=['pyresample',         # Base requirement
-                      'numpy',              # Base requirement
-                      'xarray',             # Base requirement
-                      'matplotlib==3.4.3',  # Base requirement - Previously v3.3 required for test outputs, using latest
-                      'scipy',              # Base requirement
-                      'netcdf4',            # Base requirement
-                      'pyyaml',             # Base requirement
-                      'pyaml_env',          # Required for config-based processing
-                      'ipython',            # Required for Debugging purposes
-                      'sphinx',             # Required for building documentation
-                      'satpy',              # Geostationary readers
-                      'numexpr',            # Geostationary readers
-                      'pyorbital',          # required by satpy
-                      'rasterio',           # GEOTIFF output
-                      'pyhdf',              # hdf4 readers (MODIS)
-                      'h5py',               # hdf5 readers (GMI)
-                      'tifffile',
-                      'pillow',
-                      'scikit-image',
-                      'flake8',             # Syntax checking
-                      'pylint',             # Syntax checking
-                      'bandit',             # Syntax/security checking
-                      'ephem',              # Required for overpass predictor
-                      'isodate',            # Required for overpass predictor
+    install_requires=['pyresample>=1.22.3',   # Base requirement - efficiency improvements >= 1.22.3
+                      'numpy',                # Base requirement
+                      'xarray',               # Base requirement
+                      'matplotlib',           # Base requirement
+                      'scipy',                # Base requirement
+                      'netcdf4',              # Base requirement
+                      'pyyaml',               # Base requirement
                       # 'cartopy==0.20.0',    # Currently must install via conda
                       ],
+    extras_require={
+                    'config_based': [
+                                     'pyaml_env',          # Reading YAML output config files, with paths
+                                     ],
+                    'hdf5_readers': [
+                                     'h5py',               # hdf5 readers (GMI)
+                                     ],
+                    'hdf4_readers': [
+                                     'pyhdf',              # hdf4 readers (MODIS)
+                                     ],
+                    'geotiff_output': [
+                                       'rasterio',           # GEOTIFF output
+                                       ],
+                    'syntax_checking': [
+                                        'flake8',             # Syntax checking
+                                        'pylint',             # Syntax checking
+                                        'bandit',             # Syntax/security checking
+                                        ],
+                    'documentation': [
+                                      'sphinx',             # Required for building documentation
+                                      ],
+                    'debug': [
+                              'ipython',            # Required for Debugging purposes
+                              'psutil',             # Required for memory checks
+                              ],
+                    'overpass_predictor': [
+                                           'pyorbital',          # required by satpy
+                                           'ephem',              # Required for overpass predictor
+                                           'isodate',            # Required for overpass predictor
+                                           ],
+                    'geostationary_readers': [
+                                              'satpy>=0.33.1',      # efficiency improvements >= 0.33.1
+                                              'numexpr',            # for efficiency improvements
+                                              ],
+                    'test_outputs': [
+                                     'pyshp==2.1.3',       # 2.1.3 required for successful test outputs, 2.2.0 breaks
+                                     'matplotlib==3.4.3',  # Previously v3.3 required for test outputs, updated 3.4.3
+                                     ],
+                    },
     entry_points={
         'console_scripts': [
             'run_procflow=geoips2.commandline.run_procflow:main',
@@ -79,8 +101,10 @@ setuptools.setup(
             'smap_remss_winds_netcdf=geoips2.interface_modules.readers.smap_remss_winds_netcdf:smap_remss_winds_netcdf',
             'smos_winds_netcdf=geoips2.interface_modules.readers.smos_winds_netcdf:smos_winds_netcdf',
             'scat_knmi_winds_netcdf=geoips2.interface_modules.readers.scat_knmi_winds_netcdf:scat_knmi_winds_netcdf',
-            'windsat_remss_winds_netcdf=geoips2.interface_modules.readers.windsat_remss_winds_netcdf:windsat_remss_winds_netcdf',
-            'amsr2_remss_winds_netcdf=geoips2.interface_modules.readers.amsr2_remss_winds_netcdf:amsr2_remss_winds_netcdf',
+            'windsat_remss_winds_netcdf=geoips2.interface_modules.readers.windsat_remss_winds_netcdf'
+            ':windsat_remss_winds_netcdf',
+            'amsr2_remss_winds_netcdf=geoips2.interface_modules.readers.amsr2_remss_winds_netcdf'
+            ':amsr2_remss_winds_netcdf',
             'sar_winds_netcdf=geoips2.interface_modules.readers.sar_winds_netcdf:sar_winds_netcdf',
             'sfc_winds_text=geoips2.interface_modules.readers.sfc_winds_text:sfc_winds_text',
             'ssmi_binary=geoips2.interface_modules.readers.ssmi_binary:ssmi_binary',
@@ -91,13 +115,18 @@ setuptools.setup(
         ],
         'geoips2.output_formats': [
             'full_disk_image=geoips2.interface_modules.output_formats.full_disk_image:full_disk_image',
+            'unprojected_image=geoips2.interface_modules.output_formats.unprojected_image:unprojected_image',
             'geotiff_standard=geoips2.interface_modules.output_formats.geotiff_standard:geotiff_standard',
             'imagery_annotated=geoips2.interface_modules.output_formats.imagery_annotated:imagery_annotated',
             'imagery_clean=geoips2.interface_modules.output_formats.imagery_clean:imagery_clean',
             'imagery_windbarbs=geoips2.interface_modules.output_formats.imagery_windbarbs:imagery_windbarbs',
+            'imagery_windbarbs_clean=geoips2.interface_modules.output_formats.imagery_windbarbs_clean'
+            ':imagery_windbarbs_clean',
             'netcdf_geoips=geoips2.interface_modules.output_formats.netcdf_geoips:netcdf_geoips',
             'netcdf_xarray=geoips2.interface_modules.output_formats.netcdf_xarray:netcdf_xarray',
             'text_winds=geoips2.interface_modules.output_formats.text_winds:text_winds',
+            'metadata_default=geoips2.interface_modules.output_formats'
+            '.metadata_default:metadata_default',
         ],
         'geoips2.algorithms': [
             'single_channel=geoips2.interface_modules.algorithms.single_channel:single_channel',
@@ -107,35 +136,44 @@ setuptools.setup(
             'pmw_tb.pmw_color89=geoips2.interface_modules.algorithms.pmw_tb.pmw_color89:pmw_color89',
             'sfc_winds.windbarbs=geoips2.interface_modules.algorithms.sfc_winds.windbarbs:windbarbs',
             'visir.Night_Vis_IR=geoips2.interface_modules.algorithms.visir.Night_Vis_IR:Night_Vis_IR',
+            'visir.Night_Vis_IR_GeoIPS1=geoips2.interface_modules.algorithms.visir.Night_Vis_IR_GeoIPS1:Night_Vis_IR_GeoIPS1',
+            'visir.Night_Vis_GeoIPS1=geoips2.interface_modules.algorithms.visir.Night_Vis_GeoIPS1:Night_Vis_GeoIPS1',
             'visir.Night_Vis=geoips2.interface_modules.algorithms.visir.Night_Vis:Night_Vis',
         ],
         'geoips2.procflows': [
             'single_source=geoips2.interface_modules.procflows.single_source:single_source',
             'config_based=geoips2.interface_modules.procflows.config_based:config_based',
-            'overlay=geoips2.interface_modules.procflows.overlay:overlay',
         ],
         'geoips2.trackfile_parsers': [
-            'flat_sectorfile_parser=geoips2.interface_modules.trackfile_parsers.flat_sectorfile_parser:flat_sectorfile_parser',
+            'flat_sectorfile_parser=geoips2.interface_modules.trackfile_parsers.flat_sectorfile_parser'
+            ':flat_sectorfile_parser',
             'bdeck_parser=geoips2.interface_modules.trackfile_parsers.bdeck_parser:bdeck_parser',
         ],
         'geoips2.area_def_generators': [
-            'clat_clon_resolution_shape=geoips2.interface_modules.area_def_generators.clat_clon_resolution_shape:clat_clon_resolution_shape',
+            'clat_clon_resolution_shape=geoips2.interface_modules.area_def_generators.clat_clon_resolution_shape'
+            ':clat_clon_resolution_shape',
         ],
         'geoips2.interpolation': [
-            'pyresample_wrappers.interp_nearest=geoips2.interface_modules.interpolation.pyresample_wrappers.interp_nearest:interp_nearest',
-            'pyresample_wrappers.interp_gauss=geoips2.interface_modules.interpolation.pyresample_wrappers.interp_gauss:interp_gauss',
+            'pyresample_wrappers.interp_nearest=geoips2.interface_modules.interpolation.pyresample_wrappers'
+            '.interp_nearest:interp_nearest',
+            'pyresample_wrappers.interp_gauss=geoips2.interface_modules.interpolation.pyresample_wrappers'
+            '.interp_gauss:interp_gauss',
             'scipy_wrappers.interp_grid=geoips2.interface_modules.interpolation.scipy_wrappers.interp_grid:interp_grid',
         ],
         'geoips2.user_colormaps': [
             'cmap_rgb=geoips2.interface_modules.user_colormaps.cmap_rgb:cmap_rgb',
-            'matplotlib_linear_norm=geoips2.interface_modules.user_colormaps.matplotlib_linear_norm:matplotlib_linear_norm',
+            'matplotlib_linear_norm=geoips2.interface_modules.user_colormaps.matplotlib_linear_norm'
+            ':matplotlib_linear_norm',
             'pmw_tb.cmap_150H=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_150H:cmap_150H',
             'pmw_tb.cmap_37H_Legacy=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_37H_Legacy:cmap_37H_Legacy',
-            'pmw_tb.cmap_37H_Physical=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_37H_Physical:cmap_37H_Physical',
+            'pmw_tb.cmap_37H_Physical=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_37H_Physical'
+            ':cmap_37H_Physical',
             'pmw_tb.cmap_37H=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_37H:cmap_37H',
             'pmw_tb.cmap_37pct=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_37pct:cmap_37pct',
-            'pmw_tb.cmap_89H_Legacy=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_89H_Legacy:cmap_89H_Legacy',
-            'pmw_tb.cmap_89H_Physical=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_89H_Physical:cmap_89H_Physical',
+            'pmw_tb.cmap_89H_Legacy=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_89H_Legacy'
+            ':cmap_89H_Legacy',
+            'pmw_tb.cmap_89H_Physical=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_89H_Physical'
+            ':cmap_89H_Physical',
             'pmw_tb.cmap_89H=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_89H:cmap_89H',
             'pmw_tb.cmap_89pct=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_89pct:cmap_89pct',
             'pmw_tb.cmap_89HW=geoips2.interface_modules.user_colormaps.pmw_tb.cmap_89HW:cmap_89HW',
@@ -146,7 +184,8 @@ setuptools.setup(
             'visir.Infrared=geoips2.interface_modules.user_colormaps.visir.Infrared:Infrared',
             'visir.IR_BD=geoips2.interface_modules.user_colormaps.visir.IR_BD:IR_BD',
             'visir.WV=geoips2.interface_modules.user_colormaps.visir.WV:WV',
-            'winds.wind_radii_transitions=geoips2.interface_modules.user_colormaps.winds.wind_radii_transitions:wind_radii_transitions',
+            'winds.wind_radii_transitions=geoips2.interface_modules.user_colormaps.winds.wind_radii_transitions'
+            ':wind_radii_transitions',
         ],
         'geoips2.filename_formats': [
             'geoips_fname=geoips2.interface_modules.filename_formats.geoips_fname:geoips_fname',
@@ -154,11 +193,22 @@ setuptools.setup(
             'geotiff_fname=geoips2.interface_modules.filename_formats.geotiff_fname:geotiff_fname',
             'tc_fname=geoips2.interface_modules.filename_formats.tc_fname:tc_fname',
             'tc_clean_fname=geoips2.interface_modules.filename_formats.tc_clean_fname:tc_clean_fname',
-            'text_winds_full_fname=geoips2.interface_modules.filename_formats.text_winds_full_fname:text_winds_full_fname',
+            'text_winds_day_fname=geoips2.interface_modules.filename_formats.text_winds_day_fname'
+            ':text_winds_day_fname',
+            'text_winds_full_fname=geoips2.interface_modules.filename_formats.text_winds_full_fname'
+            ':text_winds_full_fname',
             'text_winds_tc_fname=geoips2.interface_modules.filename_formats.text_winds_tc_fname:text_winds_tc_fname',
+            'metadata_default_fname=geoips2.interface_modules.filename_formats'
+            '.metadata_default_fname:metadata_default_fname',
+        ],
+        'geoips2.title_formats': [
+            'tc_standard=geoips2.interface_modules.title_formats.tc_standard:tc_standard',
+            'tc_copyright=geoips2.interface_modules.title_formats.tc_copyright:tc_copyright',
+            'static_standard=geoips2.interface_modules.title_formats.static_standard:static_standard',
         ],
         'geoips2.coverage_checks': [
             'masked_arrays=geoips2.interface_modules.coverage_checks.masked_arrays:masked_arrays',
+            'numpy_arrays_nan=geoips2.interface_modules.coverage_checks.numpy_arrays_nan:numpy_arrays_nan',
             'center_radius=geoips2.interface_modules.coverage_checks.center_radius:center_radius',
             'rgba=geoips2.interface_modules.coverage_checks.rgba:rgba',
             'windbarbs=geoips2.interface_modules.coverage_checks.windbarbs:windbarbs',

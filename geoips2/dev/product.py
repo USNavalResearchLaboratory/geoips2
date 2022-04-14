@@ -27,7 +27,7 @@ from geoips2.geoips2_utils import find_entry_point, find_config
 
 
 ### Product parameter dictionaries ###
-def is_valid_product(product_name, source_name):
+def is_valid_product(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
         Check that requested product parameter dictionary is properly formatted.
@@ -112,7 +112,7 @@ def is_valid_product(product_name, source_name):
                                   'covg_func', 'covg_args'],
                      }
 
-    product_dict = get_product(product_name, source_name)
+    product_dict = get_product(product_name, source_name, output_dict=output_dict)
     # if product_dict is None:
     #     LOG.error("INVALID PRODUCT '%s': product parameter dictionary did not exist",
     #               product_name)
@@ -150,7 +150,7 @@ def is_valid_product(product_name, source_name):
     return True
 
 
-def get_product(product_name, source_name):
+def get_product(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Get dictionary of product parameters for requested product/source combination.
@@ -181,14 +181,29 @@ def get_product(product_name, source_name):
                        f"must be contained in source dict '{source_name}' in {source_dict['yaml_files']}")
 
     for key in source_dict[source_name][product_name]:
-        if key in product_dict[product_name]:
-            LOG.debug("Replacing key '%s' in %s product_dict with source specification", key, product_name)
+        if key in product_dict[product_name] and isinstance(product_dict[product_name][key], dict):
+            for subkey in source_dict[source_name][product_name][key]:
+                LOG.debug("Replacing key '%s/%s' in %s product_dict with source specification",
+                          key, subkey, product_name)
+                product_dict[product_name][key][subkey] = source_dict[source_name][product_name][key][subkey]
+        elif key in product_dict[product_name] and not isinstance(product_dict[product_name][key], dict):
+            LOG.debug("Replacing key '%s' in %s product_dict with source specification",
+                      key, product_name)
+            product_dict[product_name][key] = source_dict[source_name][product_name][key]
         else:
             LOG.debug("Adding key '%s' to %s product_dict from source specification", key, product_name)
-        product_dict[product_name][key] = source_dict[source_name][product_name][key]
+            product_dict[product_name][key] = source_dict[source_name][product_name][key]
     product_dict[product_name]['source_input'] = source_name
     product_dict[product_name]['product_name'] = product_name
 
+    if output_dict is not None and 'product_params_override' in output_dict and \
+        (product_name in output_dict['product_params_override']
+         or 'all' in output_dict['product_params_override']):
+        keyname = 'all'
+        if product_name in output_dict['product_params_override']:
+            keyname = product_name
+        for key, val in output_dict['product_params_override'][keyname].items():
+            product_dict[product_name][key] = val
     return product_dict[product_name]
 
 
@@ -230,6 +245,42 @@ def list_products_by_type():
     return list_products()['by_type']
 
 
+def list_products_by_source():
+    ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
+
+    List all available products within the current GeoIPS instantiation,
+    on a per-source_name basis.
+
+    See geoips2.dev.product.is_valid_product? for a list of available product types and associated dictionary formats.
+    See geoips2.dev.product.get_product(product_name) to retrieve the product parameter dictionary
+                                                            for a given product
+
+    Returns:
+        (dict) : Dictionary with all sources as keys, and lists of associated product names (str) as values.
+
+    '''
+
+    return list_products()['by_source']
+
+
+def list_products_by_product():
+    ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
+
+    List all available products within the current GeoIPS instantiation,
+    with all sources available for each product.
+
+    See geoips2.dev.product.is_valid_product? for a list of available product types and associated dictionary formats.
+    See geoips2.dev.product.get_product(product_name) to retrieve the product parameter dictionary
+                                                            for a given product
+
+    Returns:
+        (dict) : Dictionary with all products as keys, and lists of associated source names (str) as values.
+
+    '''
+
+    return list_products()['by_product']
+
+
 def list_products():
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
@@ -252,7 +303,8 @@ def list_products():
     all_product_files = list_product_specs_dict_yamls()
     all_source_files = list_product_source_dict_yamls()
     all_products = {'by_type': {},
-                    'by_source': {}}
+                    'by_source': {},
+                    'by_product': {}}
     product_names = []
     source_names = []
     for source_fname in all_source_files:
@@ -285,6 +337,12 @@ def list_products():
             else:
                 if product_name not in all_products['by_source'][source_name]:
                     all_products['by_source'][source_name] += [product_name]
+
+            if product_name not in all_products['by_product']:
+                all_products['by_product'][product_name] = [source_name]
+            else:
+                if source_name not in all_products['by_product'][product_name]:
+                    all_products['by_product'][product_name] += [source_name]
 
     return all_products
 
@@ -410,7 +468,7 @@ def test_product_interface():
     return product_params_dicts 
 
 
-def get_alg_name(product_name, source_name):
+def get_alg_name(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Retrieve the algorithm required for a given product_name
@@ -429,7 +487,7 @@ def get_alg_name(product_name, source_name):
                                         $GEOIPS2_PACKAGES_DIR/*/*/algorithms/visir/*.py
                                         $GEOIPS2_PACKAGES_DIR/*/*/algorithms/pmw_tb/pmw_*.py
     '''
-    product_params = get_product(product_name, source_name)
+    product_params = get_product(product_name, source_name, output_dict=output_dict)
 
     if not product_params:
         raise ValueError(f'UNSUPPORTED product_name {product_name} not supported for source {source_name}')
@@ -443,7 +501,7 @@ def get_alg_name(product_name, source_name):
     return product_params['alg_func']
 
 
-def get_alg_args(product_name, source_name):
+def get_alg_args(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Retrieve required algorithm parameters for requested product
@@ -455,11 +513,11 @@ def get_alg_args(product_name, source_name):
         <dict> : List of float specifying min and max value for the output product
                       <geoips2_package>.algorithms.<algorithm_name>.alg_params['output_data_range']
     '''
-    product_params = get_product(product_name, source_name)
+    product_params = get_product(product_name, source_name, output_dict=output_dict)
     return product_params['alg_args']
 
 
-def get_required_variables(product_name, source_name):
+def get_required_variables(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Retrieve required variables, based on requested product and source
@@ -469,13 +527,78 @@ def get_required_variables(product_name, source_name):
         source_name (str) : Name of requested source (ie, 'ahi', 'modis', etc)
 
     Returns:
-        <list> : List of strings specifying required variables. Currently found in:
-                      <geoips2_package>.algorithms.<algorithm_name>.variables[<source_name>]
+        <list> : List of strings specifying required variables.
+            OR
+        <dict> : Dictionary of variable types of lists of variable names
+                    {'<variable_type>': ['var1', 'var2', ... , 'varn']}
     '''
-    return get_product(product_name, source_name)['variables']
+    # This can either be a list or dictionary, dependent on YAML config specification
+    variables = get_product(product_name, source_name, output_dict=output_dict)['variables']
+    # Support categorizing variables in a dictionary - var_dict[var_type] = ['var1', 'var2', 'varn']
+    if isinstance(variables, dict):
+        return_vars = {}
+        for vartype in variables:
+            return_vars[vartype] = []
+            for varname in variables[vartype]:
+                if ':' in varname:
+                    return_vars[vartype] += [varname.split(':')[1]]
+                else:
+                    return_vars[vartype] += [varname]
+    # Otherwise, just a single variable
+    else:
+        return_vars = []
+        for varname in variables:
+            if ':' in varname:
+                return_vars += [varname.split(':')[1]]
+            else:
+                return_vars += [varname]
+    return return_vars
 
 
-def get_data_range(product_name, source_name):
+def get_requested_datasets_for_variables(product_name, source_name, output_dict=None):
+    ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
+
+    Retrieve required datasets if specified for product variables, based on requested product and source
+    Within product_inputs YAML specifications, variables can be requested with <DATASET>:<VARNAME> if
+    you need a particular variable from a specific dataset.  If <DATASET>: is not specified, the first
+    variable found when looping through the datasets is used.
+
+    Args:
+        product_name (str) : Name of requested product (ie, 'IR-BD', '89H', 'color89Nearest', etc)
+        source_name (str) : Name of requested source (ie, 'ahi', 'modis', etc)
+
+    Returns:
+        <dict> : Dictionary of
+                 {'<variable_name>': '<requested_dataset>'}
+                     OR
+                 {'variable_type': {'<variable_name>': '<requested_dataset>'}
+    '''
+    variables = get_product(product_name, source_name, output_dict=output_dict)['variables']
+    return_dict = {}
+    # Support categorizing variables in a dictionary - var_dict[var_type] = ['var1', 'var2', 'varn']
+    if isinstance(variables, dict):
+        return_dict = {}
+        for vartype in variables:
+            return_dict[vartype] = {}
+            for varname in variables[vartype]:
+                dataset, variable = varname.split(':')
+                if varname not in return_dict:
+                    return_dict[vartype][variable] = [dataset]
+                else:
+                    return_dict[vartype][variable] += [dataset]
+    # Otherwise just a list
+    else:
+        for varname in variables:
+            if ':' in varname:
+                dataset, variable = varname.split(':')
+                if varname not in return_dict:
+                    return_dict[variable] = [dataset]
+                else:
+                    return_dict[variable] += [dataset]
+    return return_dict
+
+
+def get_data_range(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Retrieve required data range for requested product
@@ -497,7 +620,7 @@ def get_data_range(product_name, source_name):
     return alg_args['output_data_range']
 
 
-def get_interp_name(product_name, source_name):
+def get_interp_name(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Retrieve interp function name, based on requested product and source
@@ -511,7 +634,7 @@ def get_interp_name(product_name, source_name):
 
     See geoips2.check_interp_func for additional information on interp types, arguments, and return values 
     '''
-    products = get_product(product_name, source_name)
+    products = get_product(product_name, source_name, output_dict=output_dict)
 
     if not products:
         raise ValueError('UNSUPPORTED product_name %s not supported for source %s'.format(product_name, source_name))
@@ -521,7 +644,7 @@ def get_interp_name(product_name, source_name):
     return products['interp_func']
 
 
-def get_interp_args(product_name, source_name):
+def get_interp_args(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Retrieve interp function arguments, based on requested product and source
@@ -535,7 +658,7 @@ def get_interp_args(product_name, source_name):
 
     See geoips2.check_interp_func for additional information on interp types, arguments, and return values 
     '''
-    products = get_product(product_name, source_name)
+    products = get_product(product_name, source_name, output_dict=output_dict)
 
     if not products:
         raise ValueError('UNSUPPORTED product_name %s not supported for source %s'.format(product_name, source_name))
@@ -547,7 +670,7 @@ def get_interp_args(product_name, source_name):
     return interp_args
 
 
-def get_product_display_name(product_name, source_name):
+def get_product_display_name(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Retrieve product display name. For titles, etc.
@@ -561,7 +684,7 @@ def get_product_display_name(product_name, source_name):
 
     See geoips2.dev.check_cmap_func for additional information on colormap types, arguments, and return values 
     '''
-    products = get_product(product_name, source_name)
+    products = get_product(product_name, source_name, output_dict=output_dict)
 
     if not products:
         raise ValueError('UNSUPPORTED product_name %s not supported for source %s'.format(product_name, source_name))
@@ -572,7 +695,7 @@ def get_product_display_name(product_name, source_name):
     return products['display_name']
 
 
-def get_cmap_name(product_name, source_name):
+def get_cmap_name(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Retrieve colormap function name, based on requested product and source
@@ -586,7 +709,7 @@ def get_cmap_name(product_name, source_name):
 
     See geoips2.dev.check_cmap_func for additional information on colormap types, arguments, and return values 
     '''
-    products = get_product(product_name, source_name)
+    products = get_product(product_name, source_name, output_dict=output_dict)
 
     if not products:
         raise ValueError('UNSUPPORTED product_name %s not supported for source %s'.format(product_name, source_name))
@@ -600,7 +723,7 @@ def get_cmap_name(product_name, source_name):
     return products['cmap_func']
 
 
-def get_cmap_args(product_name, source_name):
+def get_cmap_args(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Retrieve colormap function arguments, based on requested product and source
@@ -614,7 +737,7 @@ def get_cmap_args(product_name, source_name):
 
     See geoips2.dev.check_cmap_func for additional information on colormap types, arguments, and return values 
     '''
-    products = get_product(product_name, source_name)
+    products = get_product(product_name, source_name, output_dict=output_dict)
 
     if not products:
         raise ValueError('UNSUPPORTED product_name %s not supported for source %s'.format(product_name, source_name))
@@ -626,7 +749,7 @@ def get_cmap_args(product_name, source_name):
     return products['cmap_args']
 
 
-def get_cmap_from_product(product_name, source_name):
+def get_cmap_from_product(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Retrieve colormap information, based on requested product and source
@@ -641,7 +764,7 @@ def get_cmap_from_product(product_name, source_name):
     See geoips2.dev.check_cmap_func for additional information on colormap types, arguments, and return values 
     '''
 
-    cmap_func_name = get_cmap_name(product_name, source_name)
+    cmap_func_name = get_cmap_name(product_name, source_name, output_dict=output_dict)
     try:
         from geoips2.dev.cmap import get_cmap
         cmap_func = get_cmap(cmap_func_name)
@@ -652,12 +775,12 @@ def get_cmap_from_product(product_name, source_name):
                          f" ORIGINAL EXCEPTION {type(resp).__name__}:"\
                          f" {resp.__doc__} >> {resp.args}")
     
-    cmap_args = get_cmap_args(product_name, source_name)
+    cmap_args = get_cmap_args(product_name, source_name, output_dict=output_dict)
 
     return cmap_func(**cmap_args)
 
 
-def get_covg_from_product(product_name, source_name):
+def get_covg_from_product(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Retrieve coverage check function name, based on requested product and source
@@ -671,7 +794,7 @@ def get_covg_from_product(product_name, source_name):
 
     See geoips2.dev.check_cmap_func for additional information on colormap types, arguments, and return values
     '''
-    products = get_product(product_name, source_name)
+    products = get_product(product_name, source_name, output_dict)
 
     if not products:
         raise ValueError('UNSUPPORTED product_name %s not supported for source %s'.format(product_name, source_name))
@@ -681,7 +804,7 @@ def get_covg_from_product(product_name, source_name):
     return find_entry_point('coverage_checks', products['covg_func'])
 
 
-def get_covg_args_from_product(product_name, source_name):
+def get_covg_args_from_product(product_name, source_name, output_dict=None):
     ''' Interface Under Development, please provide feedback to geoips@nrlmry.navy.mil
 
     Retrieve coverage check function args, based on requested product and source
@@ -695,7 +818,7 @@ def get_covg_args_from_product(product_name, source_name):
 
     See geoips2.dev.check_covg_func for additional information on colormap types, arguments, and return values
     '''
-    products = get_product(product_name, source_name)
+    products = get_product(product_name, source_name, output_dict=output_dict)
 
     if not products:
         raise ValueError('UNSUPPORTED product_name %s not supported for source %s'.format(product_name, source_name))

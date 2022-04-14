@@ -75,21 +75,40 @@ def is_valid_filenamer(filename_func_name):
     Returns:
         (bool) : True if 'filename_func_name' function has the appropriate call signature
                  False if filename function:
-                        does not contain all required arguments 
-                        does not contain all required keyword arguments 
+                        does not contain all required arguments
+                        does not contain all required keyword arguments
     '''
     required_args = {'standard': ['area_def', 'xarray_obj', 'product_name'],
                      'xarray_metadata_to_filename': ['xarray_obj'],
-                     'data': ['area_def', 'xarray_obj', 'product_names']}
+                     'data': ['area_def', 'xarray_obj', 'product_names'],
+                     'standard_metadata': ['area_def', 'xarray_obj', 'product_filename'],
+                     }
 
-    required_kwargs = {'standard': ['coverage', 'output_type', 'output_type_dir', 'product_dir', 'product_subdir', 'source_dir', 'basedir'],
-                       'xarray_metadata_to_filename': ['extension', 'basedir'],
-                       'data': ['coverage', 'output_type', 'output_type_dir', 'product_dir', 'product_subdir', 'source_dir', 'basedir']}
+    required_kwargs = {'standard': ['coverage',
+                                    'output_type',
+                                    'output_type_dir',
+                                    'product_dir',
+                                    'product_subdir',
+                                    'source_dir',
+                                    'basedir'],
+                       'xarray_metadata_to_filename': ['extension',
+                                                       'basedir'],
+                       'data': ['coverage',
+                                'output_type',
+                                'output_type_dir',
+                                'product_dir',
+                                'product_subdir',
+                                'source_dir',
+                                'basedir'],
+                       'standard_metadata': ['metadata_dir', 'metadata_type', 'basedir'],
+                       }
 
     try:
         filename_type = get_filenamer_type(filename_func_name)
     except ImportError as resp:
-        LOG.warning(f'Module {filename_func_name} in filename package not a valid filename module: If this is intended to be a valid filename module, ensure "filename_type" is defined: Exception: "{resp}"')
+        LOG.warning('Module %s in filename package not a valid filename module: '
+                    'If this is intended to be a valid filename module, ensure "filename_type" is defined: '
+                    'Exception: "%s"', filename_func_name, resp)
         return False
     try:
         filename_func = get_filenamer(filename_func_name)

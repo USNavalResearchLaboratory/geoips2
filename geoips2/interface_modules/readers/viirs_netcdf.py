@@ -143,6 +143,15 @@ def required_chan(chans, varnames):
     return False
 
 
+def required_geo_chan(xarrays, xvarname):
+    # for data_type in list(xarrays.keys()):
+    #     if xvarname in list(xarrays[data_type].keys()):
+    #         LOG.info('        SKIPPING %s geolocation channel %s, xarray GEOLOCATION variable %s exists',
+    #                  data_type, xvarname, xvarname)
+    #         return False
+    return True
+
+
 def required_geo(chans, data_type):
     if chans is None:
         return True
@@ -154,20 +163,24 @@ def required_geo(chans, data_type):
     return False
 
 
-def add_to_xarray(varname, nparr, xobj, cumulative_mask, ncvar, data_type):
+def add_to_xarray(varname, nparr, xobj, dataset_masks, data_type, nparr_mask):
+
+    # Add current dataset to xarray object
     if varname not in xobj.variables:
-        xobj[varname] = xr.DataArray(nparr)
+        merged_array = nparr
     else:
         merged_array = numpy.vstack([xobj[varname].to_masked_array(), nparr])
-        xobj[varname] = xr.DataArray(merged_array, dims=['dim_'+str(merged_array.shape[0]), 'dim_1'])
-       
-    if cumulative_mask[data_type] is False:
-        cumulative_mask[data_type] = xobj[varname].to_masked_array().mask
-    elif cumulative_mask[data_type].shape == xobj[varname].shape:
-        cumulative_mask[data_type] = cumulative_mask[data_type] | xobj[varname].to_masked_array().mask
-    else:
-        cumulative_mask[data_type] = numpy.vstack([cumulative_mask[data_type], nparr.mask])
-        
+    xobj[varname] = xr.DataArray(merged_array, dims=['dim_'+str(merged_array.shape[0]), 'dim_1'])
+
+    # If nparr_mask.shape != nparr.shape, then it is "False" so create an array of False the size of nparr
+    if nparr_mask.shape != nparr.shape:
+        nparr_mask = numpy.zeros(nparr.shape).astype(bool)
+    # If we haven't merged nparr_mask into dataset_masks[data_type] yet, do it now
+    if dataset_masks[data_type] is False:
+        dataset_masks[data_type] = nparr_mask
+    elif dataset_masks[data_type].shape != merged_array.shape:
+        dataset_masks[data_type] = numpy.vstack([dataset_masks[data_type], nparr_mask])
+
 
 def viirs_netcdf(fnames, metadata_only=False, chans=None, area_def=None, self_register=False):
     ''' Read VIIRS netcdf data products.
@@ -217,10 +230,11 @@ def viirs_netcdf(fnames, metadata_only=False, chans=None, area_def=None, self_re
    
     # --------------- loop input files ---------------
     xarrays = {}
-    cumulative_mask = {}
+    dataset_masks = {}
     LOG.info('Requested Channels: %s', chans)
 
-    for fname in fnames:
+    # This fails if fnames happens to be in a different order
+    for fname in sorted(fnames):
  
         # print('tst name= ', fname)
 
@@ -245,13 +259,10 @@ def viirs_netcdf(fnames, metadata_only=False, chans=None, area_def=None, self_re
         #dict_var =dict.fromkeys(VARLIST[data_type])
         #dict_gvar=dict.fromkeys(GVARLIST[data_type])
  
-        # setup open dictionary varaibles
-        dict_var={}
-        dict_gvar={}
         data_type = ncdf_file.product_name[5:8]
 
-        if data_type not in cumulative_mask:
-            cumulative_mask[data_type] = False
+        if data_type not in dataset_masks:
+            dataset_masks[data_type] = False
             xarrays[data_type] = xr.Dataset()
             xarrays[data_type].attrs['original_source_filenames'] = []
 
@@ -290,7 +301,9 @@ def viirs_netcdf(fnames, metadata_only=False, chans=None, area_def=None, self_re
         if ncdf_file.platform == 'Suomi-NPP':
             xarrays[data_type].attrs['platform_name']  = 'npp'
         if ncdf_file.platform == 'JPSS-1':
-            xarrays[data_type].attrs['platform_name']  = 'jpss-1'
+            # xarrays[data_type].attrs['platform_name']  = 'jpss-1'
+            # Attribute still lists JPSS-1, but operational satellite name is NOAA-20.
+            xarrays[data_type].attrs['platform_name']  = 'noaa-20'
         xarrays[data_type].attrs['data_provider']  = 'NASA'
         if os.path.basename(fname) not in xarrays[data_type].attrs['original_source_filenames']:
             xarrays[data_type].attrs['original_source_filenames'] += [os.path.basename(fname)]
@@ -328,7 +341,7 @@ def viirs_netcdf(fnames, metadata_only=False, chans=None, area_def=None, self_re
                 LOG.info('        Reading %s channel %s into DNB variable %s',
                          data_type, var, radvarname)
                 nparr = numpy.ma.masked_greater(ncvar[...], ncvar.valid_max)
-                add_to_xarray(radvarname, nparr, xarrays[data_type], cumulative_mask, ncvar, data_type)
+                add_to_xarray(radvarname, nparr, xarrays[data_type], dataset_masks, data_type, nparr.mask)
                 for attrname in ncvar.ncattrs():
                     xarrays[data_type][radvarname].attrs[attrname] = ncvar.getncattr(attrname)
 
@@ -342,7 +355,7 @@ def viirs_netcdf(fnames, metadata_only=False, chans=None, area_def=None, self_re
                 ncvar.set_auto_maskandscale(False)
                 unscaled_rad = ncvar[...]
                 nparr = btlut[unscaled_rad]
-                add_to_xarray(btvarname, nparr, xarrays[data_type], cumulative_mask, ncvar, data_type)
+                add_to_xarray(btvarname, nparr, xarrays[data_type], dataset_masks, data_type, nparr.mask)
                 xarrays[data_type][btvarname].attrs['units'] = 'Kelvin'
 
             if var in BT_CHANNELS+REF_CHANNELS and required_chan(chans, [radvarname]) and \
@@ -351,33 +364,49 @@ def viirs_netcdf(fnames, metadata_only=False, chans=None, area_def=None, self_re
                          data_type, var, radvarname)
 
                 ncvar.set_auto_maskandscale(True)
-                nparr = numpy.ma.masked_greater(((ncvar[...]-ncvar.add_offset)/ ncvar.scale_factor) * 
-                                                 ncvar.radiance_scale_factor +
-                                                 ncvar.radiance_add_offset,
-                                              ncvar.valid_max * ncvar.radiance_scale_factor + 
-                                                 ncvar.radiance_add_offset)
-                add_to_xarray(radvarname, nparr, xarrays[data_type], cumulative_mask, ncvar, data_type)
+
+                # Bowtie correction
+                nparr_bowtie = numpy.ma.masked_equal(ncvar[...].data, 65533)
+
+                nparr_masked  = numpy.ma.masked_greater(((ncvar[...]-ncvar.add_offset) / ncvar.scale_factor) *
+                                                        ncvar.radiance_scale_factor +
+                                                        ncvar.radiance_add_offset,
+                                                        ncvar.valid_max * ncvar.radiance_scale_factor +
+                                                        ncvar.radiance_add_offset)
+
+                add_to_xarray(radvarname, nparr_masked, xarrays[data_type],
+                              dataset_masks, data_type, nparr_bowtie.mask)
+
                 for attrname in ncvar.ncattrs():
                     xarrays[data_type][radvarname].attrs[attrname] = ncvar.getncattr(attrname)
 
             if var in REF_CHANNELS and required_chan(chans, [refvarname]):
                 LOG.info('        Reading %s channel %s into REFLECTANCE variable %s',
-                         data_type, var, btvarname)
-                nparr = numpy.ma.masked_greater(ncvar[...], ncvar.valid_max * ncvar.scale_factor + ncvar.add_offset)
-                add_to_xarray(refvarname, nparr, xarrays[data_type], cumulative_mask, ncvar, data_type)
+                         data_type, var, refvarname)
+
+                nparr_bowtie = numpy.ma.masked_equal(ncvar[...].data, 65533)
+
+                nparr_masked = numpy.ma.masked_greater(ncvar[...],
+                                                       ncvar.valid_max * ncvar.scale_factor + ncvar.add_offset)
+
+                add_to_xarray(refvarname, nparr_masked, xarrays[data_type],
+                              dataset_masks, data_type, nparr_bowtie.mask)
 
             if var in GVARLIST[data_type] and required_geo(chans, data_type):
                 xvarname = var
                 if var in xvarnames:
                     xvarname = xvarnames[var]
+
+                if not required_geo_chan(xarrays, xvarname):
+                    continue
+
                 LOG.info('        Reading %s geolocation channel %s into GEOLOCATION variable %s',
                          data_type, var, xvarname)
                 nparr = numpy.ma.masked_equal(ncvar[...], ncvar._FillValue)
-                add_to_xarray(xvarname, nparr, xarrays[data_type], cumulative_mask, ncvar, data_type)
+                add_to_xarray(xvarname, nparr, xarrays[data_type], dataset_masks, data_type, nparr.mask)
                 for attrname in ncvar.ncattrs():
                     xarrays[data_type][xvarname].attrs[attrname] = ncvar.getncattr(attrname)
             
-        
         # close the files
 
         ncdf_file.close()
@@ -389,7 +418,7 @@ def viirs_netcdf(fnames, metadata_only=False, chans=None, area_def=None, self_re
             LOG.info('No data read for dataset %s, removing from xarray list', dtype)
             continue
         for varname in xarrays[dtype].variables.keys():
-            xarrays[dtype][varname] = xarrays[dtype][varname].where(~cumulative_mask[dtype])
+            xarrays[dtype][varname] = xarrays[dtype][varname].where(~dataset_masks[dtype])
         if 'DNBRad' in list(xarrays[dtype].variables.keys()) and required_chan(chans, ['DNBRef']):
             try: 
                 from lunarref.lib.liblunarref import lunarref

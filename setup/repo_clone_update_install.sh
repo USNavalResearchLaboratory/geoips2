@@ -65,41 +65,63 @@ elif [[ "$1" == "repo_update" ]]; then
     else
         branch=$2
     fi
+    if [[ "$3" == "" ]]; then
+        do_not_fail=""
+    else
+        do_not_fail="do_not_fail"
+    fi
     for internal_plugin in $internal_plugins; do
-        $GEOIPS2_PACKAGES_DIR/geoips2/setup_geoips2.sh update_source_repo $internal_plugin $branch
+        $GEOIPS2_PACKAGES_DIR/geoips2/setup_geoips2.sh update_source_repo $internal_plugin $branch $do_not_fail
         retval=$?
-        if [[ $retval != 0 ]]; then
+        if [[ $retval != 0 && "$do_not_fail" != "do_not_fail" ]]; then
             echo "******FAILED repo_update internal plugin - please resolve and rerun repo_update command"
             exit 1
         fi
     done
     for internal_alg in $internal_algs; do
-        $GEOIPS2_PACKAGES_DIR/geoips2/setup_geoips2.sh update_source_repo $internal_alg
+        $GEOIPS2_PACKAGES_DIR/geoips2/setup_geoips2.sh update_source_repo $internal_alg $branch $do_not_fail
         retval=$?
-        if [[ $retval != 0 ]]; then
+        if [[ $retval != 0 && "$do_not_fail" != "do_not_fail" ]]; then
             echo "******FAILED repo_update internal alg - please resolve and rerun repo_update command"
             exit 1
         fi
     done
     for external_repo in $external_repos; do
-        $GEOIPS2_PACKAGES_DIR/geoips2/setup_geoips2.sh update_external_repo $external_repo
+        $GEOIPS2_PACKAGES_DIR/geoips2/setup_geoips2.sh update_external_repo $external_repo $do_not_fail
         retval=$?
-        if [[ $retval != 0 ]]; then
+        if [[ $retval != 0 && "$do_not_fail" != "do_not_fail" ]]; then
             echo "******FAILED repo_update external repo - please resolve and rerun repo_update command"
             exit 1
         fi
     done
     for test_repo in $test_repos; do
-        $GEOIPS2_PACKAGES_DIR/geoips2/setup_geoips2.sh update_test_repo $test_repo $branch
+        $GEOIPS2_PACKAGES_DIR/geoips2/setup_geoips2.sh update_test_repo $test_repo $branch $do_not_fail
         retval=$?
-        if [[ $retval != 0 ]]; then
-            echo "******FAILED repo_update external repo - please resolve and rerun repo_update command"
+        if [[ $retval != 0 && "$do_not_fail" != "do_not_fail" ]]; then
+            echo "******FAILED repo_update test repo - please resolve and rerun repo_update command"
             exit 1
         fi
     done
 
 elif [[ "$1" == "install_plugins" ]]; then
+
+    installed_plugins_path=$GEOIPS2_BASEDIR/installed_geoips2_plugins.txt
+
     for plugin in $internal_plugins $internal_algs $external_repos; do
+        echo ""
+        echo "Trying plugin '$plugin', checking $installed_plugins_path"
+        found="false"
+        if [[ -f $installed_plugins_path ]]; then
+            while read installed_plugin; do
+                if [[ "$installed_plugin" == "$plugin" ]]; then
+                    found="true"    
+                fi
+            done < $installed_plugins_path
+            if [[ "$found" == "true" ]]; then
+                echo "Plugin $plugin already installed, skipping"
+                continue
+            fi
+        fi
         $GEOIPS2_PACKAGES_DIR/geoips2/setup_geoips2.sh install_plugin $plugin
         retval=$?
         if [[ $retval != 0 ]]; then

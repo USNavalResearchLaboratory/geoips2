@@ -38,11 +38,12 @@ def read_smos_data(wind_xarray, fname):
         # Eliminate "poor" retrievals in the "old" version
         wind_xarray['wind_speed_kts'] = wind_xarray['wind_speed'].where(wind_xarray['quality_level'] < 2)[0, :, :]
     elif '_300_' in fname:
-        # 2 eliminates everything anywhere close to land, so keep everything.
-        wind_xarray['wind_speed_kts'] = wind_xarray['wind_speed'].where(wind_xarray['quality_level'] < 3)[0, :, :]
+        # 2 eliminates everything anywhere close to land - initially we had kept everything (< 3) because there
+        # were large data gaps without, but the data near land really is poor quality so must remove.
+        wind_xarray['wind_speed_kts'] = wind_xarray['wind_speed'].where(wind_xarray['quality_level'] < 2)[0, :, :]
     else:
-        # Default to keeping everything, in case filenames change
-        wind_xarray['wind_speed_kts'] = wind_xarray['wind_speed'].where(wind_xarray['quality_level'] < 3)[0, :, :]
+        # Default to keeping at least fair quality, in case filenames change
+        wind_xarray['wind_speed_kts'] = wind_xarray['wind_speed'].where(wind_xarray['quality_level'] < 2)[0, :, :]
     wind_xarray['wind_speed_kts'] = xarray.DataArray(data=numpy.flipud(wind_xarray.wind_speed_kts) * MS_TO_KTS,
                                                      name='wind_speed_kts',
                                                      coords=wind_xarray['wind_speed_kts'].coords)

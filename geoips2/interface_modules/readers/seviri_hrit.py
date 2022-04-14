@@ -309,7 +309,11 @@ def radToRef(rad, sun_zen, platform, band):
     ref = np.full_like(rad, -999.0)
     # 0 to 1 rather than 0 to 100
     ref[rad > 0] = rad[rad > 0] / irrad
+    # DO NOT REMOVE THIS STEP ALTOGETHER!!!!  Just take out the solar zenith correction part.
+    # Previously, solar zenith correction was being applied twice, then we were off by factor of pi/irrad
+    # Now we should be good!
     # ref[rad > 0] = np.pi * rad[rad > 0] / (irrad * np.cos((np.pi / 180) * sun_zen[rad > 0]))
+    ref[rad > 0] = np.pi * rad[rad > 0] / irrad
     ref[ref < 0] = 0
     ref[ref > 1] = 1
     ref[sun_zen > 90] = -999.0
@@ -618,16 +622,22 @@ def seviri_hrit(fnames, metadata_only=False, chans=None, area_def=None, self_reg
         if chan.type == 'Rad':
             datavars[adname][chan.name] = radiances[chan.band]
         if chan.type == 'Ref':
-            LOG.info('Calculating reflectances for %s'%(chan.band))
+            LOG.info('Calculating reflectances for %s, data range %f to %f',
+                     chan.band, radiances[chan.band].min(), radiances[chan.band].max())
             datavars[adname][chan.name] = radToRef(radiances[chan.band],
                                                    gvars[adname]['SunZenith'],
                                                    xarray_obj.attrs['satellite_name'],
                                                    chan.band)
+            LOG.info('Final reflectances for %s, data range %f to %f',
+                     chan.band, datavars[adname][chan.name].min(), datavars[adname][chan.name].max())
         if chan.type == 'BT':
-            LOG.info('Calculating brightness temperatures for %s'%(chan.band))
+            LOG.info('Calculating brightness temperatures for %s, data range %f to %f',
+                     chan.band, radiances[chan.band].min(), radiances[chan.band].max())
             datavars[adname][chan.name] = radToBT(radiances[chan.band],
                                                   xarray_obj.attrs['satellite_name'],
                                                   chan.band)
+            LOG.info('Final brightness temperatures for %s, data range %f to %f',
+                     chan.band, datavars[adname][chan.name].min(), datavars[adname][chan.name].max())
         if adname not in xarray_obj.attrs['datavars'].keys():
             xarray_obj.attrs['datavars'][adname] = {}
         if chan.name not in xarray_obj.attrs['datavars'].keys():

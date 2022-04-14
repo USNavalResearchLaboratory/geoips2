@@ -1,6 +1,7 @@
+output_config_type: single_source
 reader_name: abi_netcdf
 filenames: !ENV ${GEOIPS2}/tests/data/goes16_20200918_1950/*
-sectored_read: True
+resampled_read: True
 
 available_sectors:
   static:
@@ -21,18 +22,25 @@ outputs:
     filename_formats: ['geoips_fname']
     remove_duplicates: null
     product_names:
-      - Infrared
+      - Visible
+    minimum_coverage: 25
     compare_path: !ENV ${GEOIPS2}/tests/outputs/abi_<output>/<product>_image
   tc:
     requested_sector_type: tc
     output_format: imagery_annotated
     filename_formats: ['tc_fname']
+    metadata_filename_formats:
+        tc_fname: metadata_default_fname
+    metadata_output_format: metadata_default
     remove_duplicates: null
     product_names:
       - Infrared-Gray
       - IR-BD 
       - Visible
       - WV 
+    minimum_coverages:
+        all: 100
+        IR-BD: 0
     boundaries_params: tc_pmw
     gridlines_params: tc_pmw
     compare_path: !ENV ${GEOIPS2}/tests/outputs/abi_<output>/<product>_image

@@ -18,6 +18,8 @@
 import logging
 import matplotlib
 
+from geoips2.filenames.base_paths import PATHS as gpaths
+
 LOG = logging.getLogger(__name__)
 
 
@@ -117,7 +119,7 @@ def plot_overlays(mapobj, curr_ax, area_def, boundaries_info, gridlines_info,
     draw_gridlines(mapobj, area_def, curr_ax, use_gridlines_info, zorder=gridlines_zorder)
 
 
-def save_image(fig, out_fname, is_final=True, image_datetime=None, remove_duplicate_minrange=None):
+def save_image(fig, out_fname, is_final=True, image_datetime=None, remove_duplicate_minrange=None, savefig_kwargs=None):
     ''' Save the image specified by the matplotlib figure "fig" to the filename out_fname.
 
     Args:
@@ -135,6 +137,10 @@ def save_image(fig, out_fname, is_final=True, image_datetime=None, remove_duplic
     rc_params = matplotlib.rcParams
     from os.path import dirname, exists as pathexists
     from geoips2.filenames.base_paths import make_dirs
+
+    if savefig_kwargs is None:
+        savefig_kwargs = {}
+
     if is_final:
         if not pathexists(dirname(out_fname)):
             make_dirs(dirname(out_fname))
@@ -158,7 +164,7 @@ def save_image(fig, out_fname, is_final=True, image_datetime=None, remove_duplic
             ax.set_axis_off()
         LOG.info('Writing %s', out_fname)
         fig.savefig(out_fname, dpi=rc_params['figure.dpi'], pad_inches=0.0,
-                    transparent=True, frameon=False)
+                    transparent=True, frameon=False, **savefig_kwargs)
         if remove_duplicate_minrange is not None:
             remove_duplicates(out_fname, remove_duplicate_minrange)
 
@@ -174,9 +180,15 @@ def remove_duplicates(fname, min_range):
 
 
 def get_title_string_from_objects(area_def, xarray_obj, product_name_title, product_datatype_title=None,
-                                  bg_xarray=None, bg_product_name_title=None, bg_datatype_title=None):
-    from geoips2.filenames.base_paths import PATHS as gpaths
+                                  bg_xarray=None, bg_product_name_title=None, bg_datatype_title=None,
+                                  title_copyright=None, title_format=None):
+
+    if title_copyright is None:
+        title_copyright = gpaths['GEOIPS_COPYRIGHT']
+
     from geoips2.sector_utils.utils import is_sector_type
+    from geoips2.dev.title import get_title
+
     if product_datatype_title is None:
         product_source_name = xarray_obj.source_name
         product_platform_name = xarray_obj.platform_name
@@ -187,53 +199,31 @@ def get_title_string_from_objects(area_def, xarray_obj, product_name_title, prod
             except AttributeError:
                 LOG.info('No model source in xarray')
         product_datatype_title = '{0} {1}'.format(product_platform_name.upper(), product_source_name.upper())
+
     if bg_xarray is not None and bg_datatype_title is None:
         bg_datatype_title = '{0} {1}'.format(bg_xarray.platform_name.upper(), bg_xarray.source_name.upper())
-    if is_sector_type(area_def, 'tc'):
-        LOG.info('Setting dynamic title')
 
-        # Make sure we reflect the actual start_datetime in the filename
-        # geoimg_obj.set_geoimg_attrs(start_dt=xarray_obj.start_datetime)
-        if 'interpolated_time' in area_def.sector_info:
-            sector_time = area_def.sector_info['interpolated_time']
-        else:
-            sector_time = area_def.sector_info['synoptic_time']
-
-        title_line1 = '{0}{1:02d} {2} at {3}, {4}'.format(area_def.sector_info['storm_basin'],
-                                                     int(area_def.sector_info['storm_num']),
-                                                     area_def.sector_info['storm_name'],
-                                                     sector_time.strftime('%Y-%m-%d %H:%M:%S'),
-                                                     gpaths['GEOIPS_COPYRIGHT'])
-
-        # data_time = xarray_obj.start_datetime + (xarray_obj.end_datetime - xarray_obj.start_datetime)/2
-        data_time = xarray_obj.start_datetime
-        # pandas dataframes seem to handle time objects much better than xarray.
-        title_line2 = '{0} {1} at {2}'.format(product_datatype_title,
-                                              product_name_title,
-                                              data_time.strftime('%Y-%m-%d %H:%M:%S'))
-        if bg_xarray is not None:
-            # bg_data_time = bg_xarray.start_datetime + (bg_xarray.end_datetime - bg_xarray.start_datetime)/2
-            bg_data_time = bg_xarray.start_datetime
-            title_line3 = '{0} {1} at {2}'.format(bg_datatype_title,
-                                                  bg_product_name_title,
-                                                  bg_data_time.strftime('%Y-%m-%d %H:%M:%S'))
-            title_string = '{0}\n{1}\n{2}'.format(title_line1, title_line2, title_line3)
-        else:
-            title_string = '{0}\n{1}'.format(title_line1, title_line2)
-        LOG.info('title_string: %s', title_string)
+    if title_format is not None:
+        title_string = get_title(title_format)(area_def, xarray_obj, product_name_title,
+                                               product_datatype_title=product_datatype_title,
+                                               bg_xarray=bg_xarray,
+                                               bg_product_name_title=bg_product_name_title,
+                                               bg_datatype_title=bg_datatype_title,
+                                               title_copyright=title_copyright)
+    elif is_sector_type(area_def, 'tc'):
+        title_string = get_title('tc_standard')(area_def, xarray_obj, product_name_title,
+                                                product_datatype_title=product_datatype_title,
+                                                bg_xarray=bg_xarray,
+                                                bg_product_name_title=bg_product_name_title,
+                                                bg_datatype_title=bg_datatype_title,
+                                                title_copyright=title_copyright)
     else:
-        title_line1 = '{0} {1}'.format(product_datatype_title,
-                                       product_name_title)
-        title_line2 = '{0} {1}'.format(xarray_obj.start_datetime.strftime('%Y/%m/%d %H:%M:%SZ'),
-                                       gpaths['GEOIPS_COPYRIGHT'])
-        if bg_xarray is not None:
-            title_line3 = '{0} {1} at {2}'.format(bg_datatype_title,
-                                                  bg_product_name_title,
-                                                  bg_xarray.start_datetime.strftime('%Y-%m-%d %H:%M:%S'))
-            title_string = '{0}\n{1}\n{2}'.format(title_line1, title_line2, title_line3)
-        else:
-            title_string = '{0}\n{1}'.format(title_line1, title_line2)
-        LOG.info('Not dynamic, using standard title_string: %s', title_string)
+        title_string = get_title('static_standard')(area_def, xarray_obj, product_name_title,
+                                                    product_datatype_title=product_datatype_title,
+                                                    bg_xarray=bg_xarray,
+                                                    bg_product_name_title=bg_product_name_title,
+                                                    bg_datatype_title=bg_datatype_title,
+                                                    title_copyright=title_copyright)
     return title_string
 
 

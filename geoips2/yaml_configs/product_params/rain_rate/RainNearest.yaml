@@ -7,7 +7,7 @@ RainNearest:
         max_outbounds: crop
         norm: null
         inverse: null
-    mtif_type: pmw
+    mtif_type: rain
     cmap_func: pmw_tb.cmap_Rain
     cmap_args: 
         data_range: [0.05, 50.0]

@@ -3,3 +3,9 @@ sar-spd:
     variables: ['wind_speed_kts']
   nrcs:
     variables: ['nrcs']
+  incident-angle:
+    variables: ['incident_angle']
+  unsectored:
+    variables: ['wind_speed_kts']
+  sectored:
+    variables: ['wind_speed_kts']

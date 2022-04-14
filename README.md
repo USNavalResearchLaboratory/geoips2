@@ -40,12 +40,12 @@ Setup System Environment Variables
 
     # If you have sudo/apt access to your system, ensure all required libraries are available
     # sudo apt-get update               # Make sure apt packages are up to date
+    # sudo apt install wget             # Required for Miniconda and rclone setup
     # sudo apt install git              # Required for all git clones, >=2.19.1
     # sudo apt install imagemagick      # Required for test output comparisons
     # sudo apt install gfortran         # OPTIONAL - Required if you have plugins with fortran builds
     # sudo apt install build-essential  # OPTIONAL - Required if you have plugins with fortran/C builds
     # sudo apt install screen           # OPTIONAL - convenience package
-    # sudo apt install curl             # OPTIONAL - Required for rclone setup
     # sudo apt install ncurses          # OPTIONAL - Required for vim build
     # sudo apt install libncurses5-dev  # OPTIONAL - Required for vim build
 

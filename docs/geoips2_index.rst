@@ -40,6 +40,9 @@ Instructions for Anaconda or Virtual Env Python 3 setup
 ----------------------------------
 Example command line calls of representative processing.
 
+:doc:`available_functionality`
+----------------------------------
+List of all available functionality in the current release, with example outputs.
 
 :doc:`version_control_templates`
 ----------------------------------

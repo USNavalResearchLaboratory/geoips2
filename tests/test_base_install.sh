@@ -28,7 +28,9 @@
 echo ""
 # "call" used in test_all_run.sh
 for call in \
-            "$GEOIPS2/tests/scripts/abi.sh"
+            "$GEOIPS2/tests/scripts/abi.config_based_output.sh" \
+            "$GEOIPS2/tests/scripts/abi.Visible.imagery_annotated.sh" \
+            "test_interfaces"
 do
     . $GEOIPS2/tests/utils/test_all_run.sh
 done

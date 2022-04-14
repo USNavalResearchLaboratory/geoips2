@@ -26,6 +26,8 @@ import numpy as np
 import xarray
 from scipy.ndimage.interpolation import zoom
 
+from geoips2.utils.memusg import print_mem_usage
+
 try:
     import numexpr as ne
 except Exception:
@@ -111,11 +113,11 @@ def findDiff(d1, d2, path=""):
                     print(" + ", k, " : ", d2[k])
 
 
-def metadata_to_datetime(metadata):
+def metadata_to_datetime(metadata, time_var='ob_start_time'):
     '''
     Use information from block_01 to get the image datetime.
     '''
-    ost = metadata['block_01']['ob_start_time']
+    ost = metadata['block_01'][time_var]
     otl = metadata['block_01']['ob_timeline']
     dt = datetime(1858, 11, 17, 00, 00, 00)
     dt += timedelta(days=np.floor(ost))
@@ -823,6 +825,9 @@ def ahi_hsd(fnames, metadata_only=False, chans=None, area_def=None, self_registe
             Variables and Attributes: (See geoips2/docs :doc:`xarray_standards`),
             dict key can be any descriptive id
     '''
+    process_datetimes = {}
+    print_mem_usage('MEMUSG', verbose=False)
+    process_datetimes['overall_start'] = datetime.utcnow()
     gvars = {}
     datavars = {}
     adname = 'undefined'
@@ -899,13 +904,15 @@ def ahi_hsd(fnames, metadata_only=False, chans=None, area_def=None, self_registe
     if self_register and self_register not in res_md:
         raise ValueError('Resolution requested for self registration has not been read.')
 
-    if len(res_md.keys()) == 0:
+    if len(list(res_md.keys())) == 0:
         raise ValueError('No valid files found in list, make sure .DAT.bz2 are bunzip2-ed: {0}'.format(fnames))
 
     # Gather metadata
     # Assume the same for all resolutions.   Not true, but close enough.
     highest_md = res_md[list(res_md.keys())[0]]
-    dt = metadata_to_datetime(highest_md)  # Assume same for all
+    start_dt = metadata_to_datetime(highest_md, time_var='ob_start_time')  # Assume same for all
+    end_dt = metadata_to_datetime(highest_md, time_var='ob_end_time')  # Assume same for all
+    # mid_dt = start_dt + (end_dt - start_dt)/2
     ob_area = highest_md['block_01']['ob_area']
     if ob_area == 'FLDK':
         xarray_obj.attrs['sector_name'] = 'Full-Disk'
@@ -915,8 +922,8 @@ def ahi_hsd(fnames, metadata_only=False, chans=None, area_def=None, self_registe
         xarray_obj.attrs['sector_name'] = 'Regional-{}-{}'.format(ob_area[1], ob_area[2:])
     else:
         raise ValueError('Unregognized ob_area {}'.format(ob_area))
-    xarray_obj.attrs['start_datetime'] = dt
-    xarray_obj.attrs['end_datetime'] = dt
+    xarray_obj.attrs['start_datetime'] = start_dt
+    xarray_obj.attrs['end_datetime'] = end_dt
     xarray_obj.attrs['source_name'] = 'ahi'
     xarray_obj.attrs['data_provider'] = 'jma'
     xarray_obj.attrs['platform_name'] = highest_md['block_01']['satellite_name'].lower()
@@ -971,7 +978,7 @@ def ahi_hsd(fnames, metadata_only=False, chans=None, area_def=None, self_registe
         log.info('Getting geolocation information for adname %s.', adname)
         gmd = _get_geolocation_metadata(res_md[self_register])
         fldk_lats, fldk_lons = get_latitude_longitude(gmd, BADVALS, area_def)
-        gvars[adname] = get_geolocation(dt, gmd, fldk_lats, fldk_lons, BADVALS, area_def)
+        gvars[adname] = get_geolocation(start_dt, gmd, fldk_lats, fldk_lons, BADVALS, area_def)
         if not gvars[adname]:
             log.error('GEOLOCATION FAILED for adname %s DONT_AUTOGEN_GEOLOCATION is: %s',
                       adname, DONT_AUTOGEN_GEOLOCATION)
@@ -987,7 +994,7 @@ def ahi_hsd(fnames, metadata_only=False, chans=None, area_def=None, self_registe
             try:
                 gmd = _get_geolocation_metadata(res_md[res])
                 fldk_lats, fldk_lons = get_latitude_longitude(gmd, BADVALS, area_def)
-                gvars[res] = get_geolocation(dt, gmd, fldk_lats, fldk_lons, BADVALS, area_def)
+                gvars[res] = get_geolocation(start_dt, gmd, fldk_lats, fldk_lons, BADVALS, area_def)
             except IndexError as resp:
                 log.exception('SKIPPING apparently no coverage or bad geolocation file')
                 raise IndexError(resp)
@@ -1095,10 +1102,12 @@ def ahi_hsd(fnames, metadata_only=False, chans=None, area_def=None, self_registe
 
         else:
             raise ValueError('No geolocation data found.')
+    print_mem_usage('MEMUSG', verbose=False)
 
     # basically just reformat the all_metadata dictionary to
     # reference channel names as opposed to file names..
     band_metadata = get_band_metadata(all_metadata)
+    print_mem_usage('MEMUSG', verbose=False)
 
     # Remove lines and samples arrays.  Not needed.
     for res in gvars.keys():
@@ -1117,12 +1126,16 @@ def ahi_hsd(fnames, metadata_only=False, chans=None, area_def=None, self_registe
                 if 'SatZenith' in gvars[ds].keys():
                     datavars[ds][varname] = np.ma.masked_where(gvars[ds]['SatZenith'] > 85, datavars[ds][varname])
                     
+    print_mem_usage('MEMUSG', verbose=False)
     xarray_objs = {}
+    import re
     for dsname in datavars.keys():
         xobj = xarray.Dataset()
         xobj.attrs = xarray_obj.attrs.copy()
         for varname in datavars[dsname].keys():
             xobj[varname] = xarray.DataArray(datavars[dsname][varname])
+            if re.match(r"B[0-9][0-9]", varname):
+                xobj[varname].attrs['channel_number'] = int(varname[1:3])
         for varname in gvars[dsname].keys():
             xobj[varname] = xarray.DataArray(gvars[dsname][varname])
         # if hasattr(xobj, 'area_definition') and xobj.area_definition is not None:
@@ -1139,6 +1152,10 @@ def ahi_hsd(fnames, metadata_only=False, chans=None, area_def=None, self_registe
     log.info('Done reading AHI data for {}'.format(adname))
     log.info('')
 
+    print_mem_usage('MEMUSG', verbose=False)
+    process_datetimes['overall_end'] = datetime.utcnow()
+    from geoips2.dev.utils import output_process_times
+    output_process_times(process_datetimes, job_str="AHI HSD Reader")
     return xarray_objs
 
 def set_variable_metadata(xobj_attrs, band_metadata, dsname, varname):
@@ -1206,7 +1223,7 @@ def get_data(md, gvars, rad=False, ref=False, bt=False, zoom=1.0):
     else:
         full_disk = True
         # Assume we are going to make a full-disk image
-        smd = md[md.keys()[0]]
+        smd = md[list(md.keys())[0]]
         nseg = smd['block_07']['num_segments']
         lines = smd['num_lines'] * nseg
         samples = smd['num_samples']

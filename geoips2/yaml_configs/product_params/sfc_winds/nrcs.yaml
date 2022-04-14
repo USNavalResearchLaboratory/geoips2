@@ -12,7 +12,7 @@ nrcs:
         max_outbounds: crop
         norm: null
         inverse: null
-    mtif_type: windspeed
+    mtif_type: nrcs
     cmap_func: matplotlib_linear_norm
     cmap_args: 
         data_range: [-35, -20]

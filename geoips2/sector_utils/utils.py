@@ -56,7 +56,7 @@ def set_text_area_def(xarray_obj, area_def):
     return text_area_def
 
 
-def check_center_coverage(xarray_obj, area_def, varlist, covg_varname,
+def check_center_coverage(xarray_obj, area_def, varlist, covg_varname=None, covg_varlist=None,
                           width_degrees=8, height_degrees=8, verbose=False,
                           hours_before_sector_time=18, hours_after_sector_time=6):
     ''' Check if there is any data covering the center of the sector '''
@@ -77,8 +77,23 @@ def check_center_coverage(xarray_obj, area_def, varlist, covg_varname,
                                         hours_after_sector_time=hours_after_sector_time)
 
     from geoips2.data_manipulations.info import percent_unmasked
-    if covg_xarray is None or percent_unmasked(covg_xarray[covg_varname].to_masked_array()) == 0:
+
+    # If no covg_xarray returned, return False
+    if covg_xarray is None:
         return False, covg_xarray
+
+    # If we passed in a list of coverage variables, loop through each one - if any are > 0, return True
+    if covg_varlist is not None:
+        for curr_covg_varname in covg_varlist:
+            if percent_unmasked(covg_xarray[curr_covg_varname].to_masked_array()) > 0:
+                return True, covg_xarray
+
+    # If we only want a single coverage variable, return False if that variable is 0
+    if covg_varname is not None:
+        if percent_unmasked(covg_xarray[covg_varname].to_masked_array()) == 0:
+            return False, covg_xarray
+
+    # Otherwise, return True
     return True, covg_xarray
 
 

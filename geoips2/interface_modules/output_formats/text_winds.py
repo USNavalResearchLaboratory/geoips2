@@ -48,8 +48,9 @@ def text_winds(xarray_objs,
                                             append=curr_append,
                                             overwrite=overwrite,
                                             source_names=source_names)
-
-    return output_products
+            
+    # Remove any duplicates - they would have been overwritten
+    return list(set(output_products))
 
 
 def write_text_winds(xarray_obj, product_names, output_fnames, append=False, overwrite=True, source_names=None):
@@ -133,7 +134,7 @@ def write_text_winds(xarray_obj, product_names, output_fnames, append=False, ove
         make_dirs(os.path.dirname(text_fname))
 
     text_fname = output_fnames.pop()
-    if not os.path.exists(text_fname):
+    if not os.path.exists(text_fname) or not append:
         header = 'METXSCT {0} ASC (FULL DAY)\n'.format(startdt_str)
     with open(text_fname, openstr) as fobj:
         if dir_array is not None:

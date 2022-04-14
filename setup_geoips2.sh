@@ -87,7 +87,16 @@ elif [[ "$1" == "install_geoips2" ]]; then
     # This was getting 0.18.0 sometimes without specifying version ???  Force to 0.20.0
     $BASECONDAPATH/conda install -c conda-forge cartopy=0.20.0 matplotlib=3.4.3 --yes
 
-    pip install -e $GEOIPS2_PACKAGES_DIR/geoips2
+    pip install -e "$GEOIPS2_PACKAGES_DIR/geoips2[config_based,\
+                                                 hdf5_readers,\
+                                                 hdf4_readers,\
+                                                 geotiff_output,\
+                                                 syntax_checking,\
+                                                 documentation,\
+                                                 debug,\
+                                                 overpass_predictor,\
+                                                 geostationary_readers,\
+                                                 test_outputs]"
 
 elif [[ "$1" == "setup_abi_test_data" ]]; then
     # rclone lsf publicAWS:noaa-goes16/ABI-L1b-RadF/2020/184/16/
@@ -113,18 +122,28 @@ elif [[ "$1" == "setup_abi_test_data" ]]; then
 
 elif [[ "$1" == "setup_seviri" ]]; then
     mkdir -p $GEOIPS2_DEPENDENCIES_DIR/seviri_wavelet
+    cwd=`pwd`
     cd $GEOIPS2_DEPENDENCIES_DIR/seviri_wavelet
     git clone https://gitlab.eumetsat.int/open-source/PublicDecompWT.git
+    cd $cwd
     make all -C $GEOIPS2_DEPENDENCIES_DIR/seviri_wavelet/PublicDecompWT/xRITDecompress
     ln -sfv $GEOIPS2_DEPENDENCIES_DIR/seviri_wavelet/PublicDecompWT/xRITDecompress/xRITDecompress $GEOIPS2_DEPENDENCIES_DIR/bin/xRITDecompress
 elif [[ "$1" == "setup_rclone" ]]; then
     mkdir -p $GEOIPS2_DEPENDENCIES_DIR/rclone
+    wget https://downloads.rclone.org/rclone-current-linux-amd64.zip -P $GEOIPS2_DEPENDENCIES_DIR/rclone
     cd $GEOIPS2_DEPENDENCIES_DIR/rclone
-    curl -O https://downloads.rclone.org/rclone-current-linux-amd64.zip
-    unzip rclone*.zip
+    # This puts it in the current directory
+    unzip $GEOIPS2_DEPENDENCIES_DIR/rclone/rclone*.zip
     ln -sfv ${GEOIPS2_DEPENDENCIES_DIR}/rclone*/rclone*/rclone ${GEOIPS2_DEPENDENCIES_DIR}/bin/rclone
+    mkdir -p ~/.config/rclone/
+    ln -sv ${GEOIPS2_PACKAGES_DIR}/geoips2/setup/rclone_setup/rclone.conf ~/.config/rclone 
+    if [[ $? != 0 ]]; then
+        echo "If you want to replace ~/.config/rclone/rclone.conf with geoips2 version, run the following:"
+        echo "ln -sfv ${GEOIPS2_PACKAGES_DIR}/geoips2/setup/rclone_setup/rclone.conf ~/.config/rclone"
+    fi
 elif [[ "$1" == "setup_vim8" ]]; then
     mkdir -p $GEOIPS2_DEPENDENCIES_DIR/vim8_build
+    cwd=`pwd`
     cd $GEOIPS2_DEPENDENCIES_DIR/vim8_build
     git clone https://github.com/vim/vim.git
     cd vim
@@ -133,10 +152,13 @@ elif [[ "$1" == "setup_vim8" ]]; then
     make install
     ln -s $GEOIPS2_DEPENDENCIES_DIR/vim8_build/vim/bin/vim $GEOIPS2_DEPENDENCIES_DIR/bin/vi
     ln -s $GEOIPS2_DEPENDENCIES_DIR/vim8_build/vim/bin/vim $GEOIPS2_DEPENDENCIES_DIR/bin/vim
+    cd $cwd
 elif [[ "$1" == "setup_vim8_plugins" ]]; then
     mkdir -p $GEOIPS2_DEPENDENCIES_DIR/vimdotdir/pack/plugins/start
+    cwd=`pwd`
     cd $GEOIPS2_DEPENDENCIES_DIR/vimdotdir/pack/plugins/start
     git clone https://github.com/w0rp/ale.git
+    cd $cwd
     pip install flake8
     pip install pylint
     pip install bandit
@@ -155,23 +177,40 @@ elif [[ "$1" == "setup_vim8_plugins" ]]; then
         echo "If you want to replace ~/.vimrc with geoips2 ALE version, run the following:"
         echo "ln -sfv $GEOIPS2_PACKAGES_DIR/geoips2/setup/bash_setup/vimrc_ale ~/.vimrc"
     fi
-elif [[ "$1" == "install_cartopy_offlinedata" ]]; then
-    echo ""
-    echo "**Installing conda cartopy offlinedata"
-    # 0.2.4 no longer sets $CARTOPY_OFFLINE_SHARED
-    $BASECONDAPATH/conda install -c conda-forge cartopy_offlinedata==0.2.3
-    echo ""
-    echo "CARTOPY_OFFLINE_SHARED: $CARTOPY_OFFLINE_SHARED"
+elif [[ "$1" == "download_cartopy_natural_earth" ]]; then
     echo ""
     echo "**Installing github.com/nvkelso/natural-earth-vector map data, this will take a while"
     cartopy_data=$GEOIPS2_DEPENDENCIES_DIR/cartopy_map_data
     echo "    destination: $cartopy_data"
     mkdir -p $cartopy_data
-    git -C $cartopy_data clone https://github.com/nvkelso/natural-earth-vector
+    cwd=`pwd`
+    cd $cartopy_data
+    git clone https://github.com/nvkelso/natural-earth-vector
+    cd $cwd
+elif [[ "$1" == "link_cartopy_natural_earth" ]]; then
     echo ""
-    echo "**Linking natural-earth-data to CARTOPY_OFFLINE_SHARED: $CARTOPY_OFFLINE_SHARED"
-    ln -sf $cartopy_data/natural-earth-vector/*_cultural/* $CARTOPY_OFFLINE_SHARED/shapefiles/natural_earth/cultural
-    ln -sf $cartopy_data/natural-earth-vector/*_physical/* $CARTOPY_OFFLINE_SHARED/shapefiles/natural_earth/physical
+    echo "**Linking natural-earth-data to ~/.local/share/cartopy/shapefiles/natural_earth/cultural and physical"
+    cartopy_data=$GEOIPS2_DEPENDENCIES_DIR/cartopy_map_data
+    local_natural_earth_path=~/.local/share/cartopy/shapefiles/natural_earth
+    mkdir -p $local_natural_earth_path/cultural
+    mkdir -p $local_natural_earth_path/physical
+    ln -sfv $cartopy_data/natural-earth-vector/*_cultural/*/* $local_natural_earth_path/cultural
+    ln1_retval=$?
+    ln -sfv $cartopy_data/natural-earth-vector/*_physical/*/* $local_natural_earth_path/physical
+    ln2_retval=$?
+    ln -sfv $cartopy_data/natural-earth-vector/*_cultural/* $local_natural_earth_path/cultural
+    ln3_retval=$?
+    ln -sfv $cartopy_data/natural-earth-vector/*_physical/* $local_natural_earth_path/physical
+    ln4_retval=$?
+    if [[ $ln1_retval != 0 || $ln2_retval != 0 || $ln3_retval != 0 || $ln4_retval != 0 ]]; then
+        echo "**You MUST be able to replace ALL user cartopy data with natural_earth_vector downloads!"
+        echo "Please remove cartopy shapefiles and replace with downloaded cartopy_map_data"
+        echo "rm -fv ~/.local/share/cartopy/shapefiles/natural_earth/cultural/*"
+        echo "rm -fv ~/.local/share/cartopy/shapefiles/natural_earth/physical/*"
+        echo "ln -sfv $cartopy_data/natural-earth-vector/*_cultural/* $local_natural_earth_path/cultural"
+        echo "ln -sfv $cartopy_data/natural-earth-vector/*_physical/* $local_natural_earth_path/physical"
+        exit 1
+    fi
 elif [[ "$1" =~ "clone_test_repo" ]]; then
     echo ""
     echo "**Cloning $2.git"
@@ -187,28 +226,36 @@ elif [[ "$1" =~ "update_test_repo" ]]; then
     else
         branch=$3
     fi
+    if [[ "$4" == "do_not_fail" ]]; then
+        do_not_fail="do_not_fail"
+    else
+        do_not_fail=""
+    fi
     currdir=$GEOIPS2_TESTDATA_DIR/$2
     echo ""
     echo "**Updating test repo $2 branch $branch"
-    git -C $GEOIPS2_TESTDATA_DIR/$2 pull
-    git -C $GEOIPS2_TESTDATA_DIR/$2 checkout -t origin/$branch
+    cwd=`pwd`
+    cd $GEOIPS2_TESTDATA_DIR/$2
+    git pull
+    git checkout -t origin/$branch
     retval_t=$?
-    git -C $GEOIPS2_TESTDATA_DIR/$2 checkout $branch
+    git checkout $branch
     retval=$?
-    git -C $GEOIPS2_TESTDATA_DIR/$2 pull
-    git -C $GEOIPS2_TESTDATA_DIR/$2 pull
+    git pull
+    git pull
     retval_pull=$?
+    cd $cwd
     echo "git checkout -t return: $retval_t"
     echo "git checkout return: $retval"
     echo "git pull return: $retval_pull"
     if [[ $retval != 0 || $retval_t != 0 ]]; then
         echo "**You can ignore 'fatal: A branch named <branch> already exists' - just means you already have the branch"
     fi
-    if [[ $retval != 0 && $retval_t != 0 ]]; then
+    if [[ $retval != 0 && $retval_t != 0 && "$do_not_fail" != "do_not_fail" ]]; then
         echo "*****GIT CHECKOUT FAILED ON $currdir $branch PLEASE APPROPRIATELY commit (if you want to save your changes), checkout (if you do not want to save changes of a git-tracked file), or delete (if you do not want to save changes of an untracked file) ANY LOCALLY MODIFIED FILES AND RERUN repo_update COMMAND. This will ensure you have the latest version of all repos!!!!!!!!"
         exit 1
     fi
-    if [[ $retval_pull != 0 ]]; then
+    if [[ $retval_pull != 0 && "$do_not_fail" != "do_not_fail" ]]; then
         echo "*****GIT PULL FAILED ON $currdir $branch PLEASE APPROPRIATELY commit (if you want to save your changes), checkout (if you do not want to save changes of a git-tracked file), or delete (if you do not want to save changes of an untracked file) ANY LOCALLY MODIFIED FILES AND RERUN repo_update COMMAND. This will ensure you have the latest version of all repos!!!!!!!!"
         exit 1
     fi
@@ -272,16 +319,24 @@ elif [[ "$1" =~ "update_source_repo" ]]; then
     else
         branch=$3
     fi
+    if [[ "$4" == "do_not_fail" ]]; then
+        do_not_fail="do_not_fail"
+    else
+        do_not_fail=""
+    fi
     currdir=$GEOIPS2_PACKAGES_DIR/$2
     echo ""
     echo "**Updating $2 branch $branch"
-    git -C $GEOIPS2_PACKAGES_DIR/$2 pull
-    git -C $GEOIPS2_PACKAGES_DIR/$2 checkout -t origin/$branch
+    cwd=`pwd`
+    cd $GEOIPS2_PACKAGES_DIR/$2
+    git pull
+    git checkout -t origin/$branch
     retval_t=$?
-    git -C $GEOIPS2_PACKAGES_DIR/$2 checkout $branch
+    git checkout $branch
     retval=$?
-    git -C $GEOIPS2_PACKAGES_DIR/$2 pull
-    git -C $GEOIPS2_PACKAGES_DIR/$2 pull
+    git pull
+    git pull
+    cd $cwd
     retval_pull=$?
     echo "git checkout -t return: $retval_t"
     echo "git checkout return: $retval"
@@ -289,11 +344,11 @@ elif [[ "$1" =~ "update_source_repo" ]]; then
     if [[ $retval != 0 || $retval_t != 0 ]]; then
         echo "**You can ignore 'fatal: A branch named <branch> already exists' - just means you already have the branch"
     fi
-    if [[ $retval != 0 && $retval_t != 0 ]]; then
+    if [[ $retval != 0 && $retval_t != 0 && "$do_not_fail" != "do_not_fail" ]]; then
         echo "*****GIT CHECKOUT FAILED ON $currdir $branch PLEASE APPROPRIATELY commit (if you want to save your changes), checkout (if you do not want to save changes of a git-tracked file), or delete (if you do not want to save changes of an untracked file) ANY LOCALLY MODIFIED FILES AND RERUN repo_update COMMAND. This will ensure you have the latest version of all repos!!!!!!!!"
         exit 1
     fi
-    if [[ $retval_pull != 0 ]]; then
+    if [[ $retval_pull != 0 && "$do_not_fail" != "do_not_fail" ]]; then
         echo "*****GIT PULL FAILED ON $currdir $branch PLEASE APPROPRIATELY commit (if you want to save your changes), checkout (if you do not want to save changes of a git-tracked file), or delete (if you do not want to save changes of an untracked file) ANY LOCALLY MODIFIED FILES AND RERUN repo_update COMMAND. This will ensure you have the latest version of all repos!!!!!!!!"
         exit 1
     fi
@@ -316,28 +371,62 @@ elif [[ "$1" =~ "run_git_cmd" ]]; then
         gitbasedir=$4
     fi
     echo ""
-    echo "**Running git -C $gitbasedir/$2 $3"
-    git -C $gitbasedir/$2 $3
+    echo "**Running cd $gitbasedir/$2; git $3"
+    cwd=`pwd`
+    cd $gitbasedir/$2
+    git $3
+    cd $cwd
     retval=$?
     echo "git $3 return: $retval"
 elif [[ "$1" =~ "update_external_repo" ]]; then
     currdir=$GEOIPS2_PACKAGES_DIR/$2
+    if [[ "$3" == "do_not_fail" ]]; then
+        do_not_fail="do_not_fail"
+    else
+        do_not_fail=""
+    fi
     echo ""
     echo "**Updating external repo $2"
-    git -C $GEOIPS2_PACKAGES_DIR/$2 pull
+    cwd=`pwd`
+    cd $GEOIPS2_PACKAGES_DIR/$2
+    git pull
+    cd $cwd
     retval=$?
     echo "git pull return: $retval"
-    if [[ $retval != 0 ]]; then
+    if [[ $retval != 0 && "$do_not_fail" != "do_not_fail" ]]; then
         echo "*****GIT PULL FAILED ON $currdir PLEASE APPROPRIATELY commit (if you want to save your changes), checkout (if you do not want to save changes of a git-controlled file), or delete (if you do not want to save changes of a non-git-controlled file) ANY LOCALLY MODIFIED FILES AND RERUN repo_update COMMAND. This will ensure you have the latest version of all repos!!!!!!!!"
         exit 1
     fi
 elif [[ "$1" =~ "install_plugin" ]]; then
+    plugin=$2
+    installed_plugins_path=$GEOIPS2_BASEDIR/installed_geoips2_plugins.txt
     echo ""
-    echo "**Installing plugin $2"
-    $GEOIPS2_PACKAGES_DIR/$2/setup_$2.sh install_$2
-    if [[ $? != 0 ]]; then
-        echo "**Trying pip installing plugin $2"
+    echo "**Installing plugin $plugin"
+    # First check if setup_<package>.sh exists
+    if [[ -f $GEOIPS2_PACKAGES_DIR/$2/setup_$2.sh ]]; then
+        echo "**Found setup_$2.sh: Running $2/setup_$2.sh install_$2"
+        $GEOIPS2_PACKAGES_DIR/$2/setup_$2.sh install_$2
+        retval=$?
+    # Next check if setup.sh exists
+    elif [[ -f $GEOIPS2_PACKAGES_DIR/$2/setup.sh ]]; then
+        echo "**Found setup.sh: Running $2/setup.sh install"
+        $GEOIPS2_PACKAGES_DIR/$2/setup.sh install
+        retval=$?
+    # Next check if setup.py exists
+    elif [[ -f $GEOIPS2_PACKAGES_DIR/$2/setup.py ]]; then
+        echo "**Found setup.py: pip installing plugin $2"
         pip install -e $GEOIPS2_PACKAGES_DIR/$2
+        retval=$?
+    fi
+    if [[ $retval != 0 ]]; then
+        echo "**Failed installing plugin $2, skipping! Must include one of the following setup options:"
+        echo "**1. setup_$2.sh install_$2"
+        echo "**2. setup.sh install"
+        echo "**3. setup.py -> Installed via 'pip install -e $GEOIPS2_PACKAGES_DIR/$2'"
+    elif [[ -f $installed_plugins_path ]]; then
+        echo ""
+        echo "Adding plugin $plugin to list $installed_plugins_path, will not reinstall"
+        echo "$plugin" >> $installed_plugins_path
     fi
     echo ""
 else

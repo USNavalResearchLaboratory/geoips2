@@ -13,6 +13,503 @@
 #### # # included license for more details.
 
 
+# v1.4.5: 2022-03-18, --compare_paths to --compare_path, add --output_file_list_fname, add GEOIPS_COPYRIGHT_ABBREVIATED
+
+### Breaking Interface Changes
+* **Command line argument updates**
+    * Replaced --compare_paths with --compare_path in command line arguments
+        * pass command_line_args to set_comparison_path - if "compare_path" is set in command_line_args,
+            use that instead of individual compare_paths within output config
+        * Eventually add support for "compare_paths_override" which will allow setting a different
+            compare_path for each output_type via command line (dictionary based) - but for now all or nothing
+
+### Major new functionality
+* **Testing Utilities**
+    * Added compare_output_file_list.sh utility, for comparing a list of files with existence on disk (simpler
+        output comparison test than actually comparing the contents of each output product).
+* **Command line arguments**
+    * Add --output_file_list_fname to command line args, support in config-based and single-source procflows
+        * Allows specifying full path to file to store output filenames from current - quickly update
+            output file lists for comparison purposes.
+    * Add support for "filename_format_kwargs" command line option as well as "filename_formats_kwargs" output config.
+* **Sectors**
+    * New TC Templates
+        * 2km 512x512
+        * 2km 800x800
+* **Product display**
+    * **base_paths.py**: Add GEOIPS_COPYRIGHT_ABBREVIATED, for use in product titles.
+
+### Improvements
+* **compare_outputs.py**: Add gzip_product functionality
+    * Ensure if we gunzip a product during output comparisons, after we run the comparison we re-zip the file.
+        Clean up after ourselves, and leave things the way we found them.
+* **unprojected_image.py**: Update so default for unprojected_image is NO savefigs_kwargs
+    (empty dictionary, which means masked background, rather than default black background)
+* **setup_geoips2.sh**
+    * Remove dependence on git v2.19.1 - cd to directories rather than using git -C
+    * Explicitly use setup scripts in the following order:
+        1. setup_<package>.sh install_<package>
+        2. setup.sh install
+        3. setup.py (uses pip install)
+    * If plugin exists in $GEOIPS2_BASEDIR/installed_geoips2_plugins.txt, do not attempt to reinstall
+        * Allows initializing installed_geoips2_plugins at the beginning of system installation to avoid
+            massive reinstallations of common geoips2 plugin dependencies.
+
+### Documentation Updates
+* Formatting changes
+    * correct spacing for code blocks and bullets
+    * Remove level 4 header from "Available modules" and "Example outputs" in available functionality
+* modis from 600 to 200 width
+* Updated AMSU-A, AMSU-B, MHS comments for accuracy (MHS == AMSU-B, AMSU-A separate.
+    Still using "amsu-b" only in geoips)
+
+### Bug fixes
+* **bdeck_parser.py**: Remove shell statement - raised error was dropping to shell during testing.
+* **memusg.py** utility: Wrap import psutil in try/except so we don't fail if not installed
+* **compare_outputs.py**: In test repo auto-generated update scripts, print gunzip before copy,
+    and gzip after copy for files that must be gzipped before comparisons.
+* **single_source and config_based**: Add newline to the end of "output_file_list", otherwise skipped during shell loop
+   
+
+
+
+# v1.4.4: 2022-03-06, command line override, unsectored product, product database support; Visible product corrections
+
+### Test Repo Updates
+* **Update ABI Visible Products with more informative colorbar label**
+    * Include channel and wavelength in colorbar label
+    * ABI static and TC Visible test png outputs
+
+### Breaking Interface Changes
+* **single_channel algorithm - rename solar zenith angle specifications**
+    * See "Bug fixes"
+
+
+### Improvements
+* **Product tuning updates**
+    * Add "update\_output\_dict\_from\_command\_line\_args" to support command line modifications to YAML output config
+        * filename\_format\_kwargs
+        * metadata\_filename\_format\_kwargs
+    * Add "produce\_current\_time" function in output\_config interface
+        * Support "produce\_times" field in output config to filter required times for processing
+    * Add "Uncorrected-Channel" product, that just plots normalized data directly (using min/max of data itself)
+    * Update colorbar labels for ABI, AHI, SEVIRI, MODIS, and VIIRS Visible imagery to include the channel used in the plot
+    * dev/product.py get\_product: Loop through dictionary elements in product\_inputs, only replacing what exists.
+        * To allow specifying only specific elements within one of the product parameters dictionaries
+            from within product\_inputs specifications, if one of the dictionary elements is a dictionary
+            itself, loop through that, replacing with the updated values found in product\_inputs.
+        * This allows maintaining all the defaults, and only specifying things that must change.
+    * Add "numpy\_arrays\_nan" coverage check interface module (for non-masked-arrays)
+* **TC YAML Template Updates**
+    * Add tc\_visir\_3200km YAML gridlines parameters file - identical to tc\_visir, but 5 degree grid spacing.
+    * Created 1400x1400, 1024x1024, 256x256, 512x512, 800x800, and 1600x1600 subdirectories for tc templates.
+        * 2km and 4km 1600x1600 TC template YAMLs
+        * 4km 256x256
+    * Will NOT change tc\_web\_template.yaml, etc, since ALL test scripts use those.
+    * Perhaps explicitly setting these values in the YAML configs would be better than having
+        completely separate files for each shape/resolution - will address direct YAML output
+        config modifications at a later date - likely would be a method for overriding fields of
+        TC template yamls, plotting\_params YAMLs, as well as product params YAMLs (so you could still use
+        completely separate individual files, but also override individual fields within as needed).
+* **Sectoring / Processing Order**
+    * Add "resector=False" get\_alg\_xarray option to config\_based
+        * this enables alg\_interp\_cmap and alg\_cmap product types (no pre-interpolation).
+        * Currently "self\_register" and "reader\_defined" area\_def types lead to "resector=False" for get\_alg\_xarray.
+            * Skip ALL sectoring for reader\_defined and self\_register.
+    * Add xarray\_to\_numpy alg type support to get\_alg\_xarray
+        * for alg\_interp\_cmap and alg\_cmap product types
+            * no pre-interpolation - must pass sectored xarray, so can only include a single dataset
+* **Product database support**
+    * Added product database command line argument
+    * Added hooks to single\_source and config\_based procflows
+        * Checks if database environment variables are set
+        * Uses yaml metadata file to populate the database
+        * Prints "DATABASESUCCESS" for all products written to the database
+* **Installation / Setup / Logging Process**
+    * Separate vim8 installation and vim8 plugin setup in base\_install\_and\_test.sh
+    * Remove verbose log statements including entire command line arguments
+        * lots and lots of filenames, and now the command line call is printed on multiple lines separately
+
+### Bug fixes
+* **Resolve issues with Visible products**
+    * Update AHI Visible parameters (was washed out / saturated)
+        * gamma\_list: []
+        * data\_range: [0.0, 120.0]
+        * scalefactor still 100
+    * Update MODIS Visible parameters (was all white)
+        * gamma\_list: []
+        * scale\_factor: 1.0 (comes out of the reader 0 to 100!)
+    * Update Visible product
+        * min\_day\_zen -> max\_day\_zen for single\_channel algorithm
+        * Add comments that AHI and MODIS override standard parameters for Visible
+    * SEVIRI reader reflectance calculations
+        * reinstate: ref[rad > 0] = np.pi * rad[rad > 0] / irrad
+            * Previously included solar zenith correction, so I had removed the entire line
+        * Add log statements with min/max data values for reference
+* **single_channel algorithm - rename solar zenith angle specifications**
+    * rename min\_day\_zen -> max\_day\_zen
+        * since day is 0-90, we want to identify the max zenith angle that will still be considered daytime
+    * rename max\_night\_zen -> min\_night\_zen
+        * night is 90-180, identify minimum zenith angle that will still be night
+    * Updated Visible product with new names
+* **Error Checking**
+    * Added check in overpass\_predictor.py if sun.rise\_time exists
+    * Added handling in amsub\_mirs reader for if there are bad ScanTime values
+
+
+# v1.4.3: 2022-02-17, updated test scripts and documentation, jpss-1 to noaa-20
+
+### Breaking Interface Changes
+* **Replace jpss-1 with noaa-20 for VIIRS platform_name**
+    * VIIRS reader
+    * VIIRS Night Vis test outputs
+
+### Major new functionality
+* **Minimum coverage capability**
+    * Add minimum\_coverage option to command line arguments
+    * Add minimum\_coverage / minimum\_coverages option to YAML output config
+        * 'minimum\_coverage' covers all products
+        * 'minimum\_coverages' dictionary is on a per-product basis
+        * Special "all" key within minimum\_coverages dictionary applies to all products
+            (can additionally specify individual products within dictionary).
+    * Add get\_minimum\_coverage function to dev.output\_config interface module
+* **Expanded example test scripts**
+    * coverage over the various readers, products, and output formats
+        * NEW Visible annotated ABI static
+        * NEW IR-BD clean AHI TC
+        * 89H-Physical annotated AMSR2 TC
+        * 183-3H annotated AMSU-B TC
+        * windbarbs clean ASCAT KNMI TC
+        * Remove ASCAT UHR annotated windbarbs
+        * NEW wind-ambiguities annotated ASCAT UHR TC
+        * NEW 89pct clean GMI TC
+        * windspeed annotated HY-2B TC
+        * NEW Rain clean IMERG TC, no metadata
+        * NEW TPW\_CIMSS MIMIC annotated global
+        * NEW Infrared unprojected\_image MODIS
+        * NEW windbarbs annotated OSCAT KNMI TC
+        * NRCS annotated SAR TC
+        * WV-Upper unprojected\_image SEVIRI
+        * SMAP unsectored text winds (gzipped txt file)
+        * SMOS sectored text winds (not gzipped txt file)
+        * color89 unprojected\_image SSMIS (multiple granules, RGB)
+        * REMOVE VIIRS IR-BD and Visible
+        * Night-Vis-IR annotated VIIRS TC (day time! Need to update for night!)
+    * Add documentation\_imagery.sh script to generate all imagery used in the available\_functionality.rst
+        documentation, and copy it into the appropriate directory for use in documentation.
+        Return non-zero if any of the commands failed (run\_procflow or copy)
+    * Add minimum\_coverage and minimum\_coverages options to yaml\_configs/abi\_test.yaml for referencex
+        (does not change output)
+* **Expanded available functionality documentation**
+    * Readers - each reader contains a global registered image for reference
+        * ABI
+        * AHI
+        * EWS-G
+        * SEVIRI
+        * MODIS
+        * SMAP (updated with full command)
+        * SMOS (updated with full command)
+        * HY2 (updted with full command and global registered image)
+    * Output Formats
+        * Unprojected Imagery
+* **Additional test sectors**
+    * bsh062022.dat b-deck file
+    * bsh252020.dat b-deck file
+    * bsh112022.dat b-deck file
+    * bio022021.dat b-deck file
+    * global.yaml 20km 1000x2000 global area\_def
+* **Updated Night-Vis VIIRS products**
+    * Added Night-Vis-GeoIPS1 and Night-Vis-IR-GeoIPS1 products for comparison with geoips2 versions
+
+### Improvements
+* Update imagery\_windbarbs to handle 1D vectors, 2-D vectors only, and 2-D vectors with ambiguitie
+    (different numbers of arrays). Ambiguities were NOT getting plotted correctly previously.
+* Update unprojected\_imagery to allow specifying either or both of x\_size and y\_size,
+    and calculating the other if only one was included.
+* Rename geoips2 test scripts to make it clear at a glance what reader, product, and output format they are testing.
+* Print copy-and-pasteable command line call at the beginning of each run\_procflow call.
+* Installation improvements
+    * Separate base requirements from optional requirements.
+    * Update setup\_geoips2.sh install\_geoips2 to explicitly include all optional requirements.
+
+### Bug fixes
+* swap x\_size and y\_size for unprojected imagery
+* Update EWS-G to "gvar" source name rather than gvissr
+* Added uncompress test script to uncompress the .txt.gz unsectored text wind output.
+* Update abi test script names in test\_base\_install.sh (no longer abi.sh and abi\_config.sh)
+    * Call test\_base\_install.sh from test\_all.sh
+    * Remove abi test calls from test\_all.sh, since they are included in test\_base\_install.sh
+
+
+# v1.4.2: 2022-02-05, finalizing procflows to allow unprojected outputs, updating test outputs for consistent shapefiles
+
+### Test Repo Updates
+* Updated to Natural Earth Vector v5.0.0 shapefiles
+    * AMSR2 TC image - very slightly modified political boundaries
+    * AHI global image - very slightly modified political boundaries
+
+### Major new functionality
+* SAR Incident Angle Product
+    * Added "incident\_angle" variable to SAR xarray output
+    * Added "incident-angle" product to "sar-spd" product\_inputs
+    * Added "incident-angle" YAML product\_params, and test script
+* ASCAT UHR windbarbs test script
+* "unprojected\_image" output\_format module
+    * Plots the data with no resampling - no area\_def required
+    * Call signature: xarray\_obj, product\_name, output\_fnames, product\_name\_title=None, mpl\_colors\_info=None 
+                      x\_size=None, y\_size=None
+* "unprojected" outputter\_type
+    * Call signature: xarray\_obj, product\_name, output\_fnames, product\_name\_title=None, mpl\_colors\_info=None 
+* Support <DATASET>:<VARNAME> variable requests in product\_inputs YAML config files
+    * Update VIIRS Night-Visible to use DNB:SunZenith
+    * Update VIIRS Visible to use MOD:Sunzenith
+    * Update AHI Visible to use MED:Sunzenith
+* Added noaa-20 platform to amsub\_mirs reader
+* Filter "poor" quality data within SMOS reader
+    * previously was saving poor, fair, and good
+
+### Improvements
+* Installation Improvements
+    * Allow skipping installation steps, rather than just continuing or quitting altogether
+    * Separate steps for downloading cartopy map data and linking to ~/.local
+    * Separate rclone, seviri, and vim8 installation steps (to allow skipping one or more if not needed)
+* Updated command line arguments
+    * sectored\_read / resampled\_read - specifications for primary dataset
+        * Determines whether to read data initially or within area\_def loop
+    * self\_register\_dataset, self\_register\_source, and self\_register\_platform
+        * Explicitly request using specific dataset lat/lons as the area\_def target for resampling
+        * Add self\_register area\_def specification in get\_area\_defs\_from\_commandline\_args
+    * fuse\_sectored\_read / fuse\_resampled\_read - specifications for additional datasets
+    * fuse\_self\_register\_dataset, fuse\_self\_register\_source, fuse\_self\_register\_platform
+* Updated procflow ordering
+    * Tunable data read order within procflows (based on data read requirements)
+        * For self\_register or reader\_defined area\_defs - must read data prior to calling
+             get\_area\_defs\_from\_commandline\_args (so area information is available within the xarray
+            dataset when identifying area\_defs)
+        * For externally specified area\_defs, read data after calling get\_area\_defs\_from\_commandline\_args,
+            to reduce processing time if there is no coverage
+        * For sectored\_read / resampled\_read data types, do not read data until we are within the area\_defs loop
+    * Tunable algorithm order within procflows (based on alg\_type specified in dev/alg.py)
+        * Support alg\_cmap and alg\_interp\_cmap algorithm types (previously only interp\_alg\_cmap supported -
+            allow calling algorithm prior to data interpolation)
+    * Tunable sectoring order within procflows (based on data read requirements)
+        * Do not sector reader\_defined or self\_register sector types - must use full dataset, no padding available
+    * Tunable outputter\_types within procflows (variable call signatures)
+        * xarray\_data
+        * image
+        * image\_overlay
+        * unprojected\_image
+* Add mem\_usg and process\_times output to procflows for monitoring
+
+### Bug fixes
+* Update pmw\_37 and windbarbs algorithms to only include mandatory "arrays" argument, make output\_data\_range optional
+    * If None, output\_data\_range will default to 230 to 280 for 37pct, and data min/max for windbarbs.
+* Update single\_source procflow to ensure "resampled\_read" is passed to get\_alg\_xarray
+    * to allow using the resampled dataset for retrieving the requested variables
+    * if \<DATASET\_NAME>:\<VARIABLE\_NAME> construct used in product\_inputs YAML configs,
+        we must assure resampled data is not limited to the native datasets,
+        since they will no longer exist
+
+
+# v1.4.1: 2022-01-21, viirs and smap output config test scripts and documentation
+
+### Refactor
+* Allow passing cbar\_ticks to matplotlib\_linear\_norm module
+
+### Major new functionality
+* Add SMAP unsectored text winds explicit test call and sample output
+* Add SMAP test script to test\_all.sh
+* Add bwp202021.dat deck file with SMAP test dataset coverage
+* Add VIIRS explicit test script and sample outputs
+    * bsh192021.dat sector
+    * IR-BD and Night-Vis-IR annotated imagery output
+* Add himawari8 test sector
+* Add VIIRS explicit est call to test\_all.sh
+
+### Improvements
+* Add aerosol reader and fname as arg options
+* Add channel number as variable in AHI HSD reader
+* Adjust selection of variable for interpolation in single\_source.py if the same variable name is contained in multiple datasets 
+ (ie, VIIRS geolocation variables - slightly different for each resolution dataset - caused issues with differing test outputs between single source and config\_based when multiple datasets are present)
+    * Use variable from dataset that contains ALL required variables
+    * Use variable from first dataset
+* config\_based procflow now always sector to the adjusted area\_def to ensure we get all of the data.
+    * Also must sector before adjusting the area\_def to ensure we have a consistent center time for determining new area\_def 
+      (slightly different center times resulting from different sectoring can cause very slightly different recentering)
+
+### Documentation Updates
+* Add VIIRS sensor and Night-Vis-IR product to avaialble functionality documentation
+* Add SMAP unsectored text winds sample output to "available\_functionality" documentation
+
+### Bug fixes
+* Correct typo in config\_based.py (product\_name in pad\_alg\_xarrays, not alg\_xarrays)
+* Update viirs\_netcdf.py to sort filenames prior to reading - intermittent failure if filenames are not sorted in advance
+* No longer converting min/max value to int before normalizing in matplotlib\_linear\_norm colormap
+
+# v1.4.0: 2022-01-10, add modular metadata output support, causing some internal interface changes
+
+All interface changes due to this update are isolated to internal functions, required to support modular
+metadata filename and output format specifications.  These changes will not impact any user/developer interfaces.
+
+### Breaking Interface Changes
+* Removed "overlay" procflow - functionality completely covered by config\_based procflow.
+* remove\_duplicates:
+    * Now takes dictionary of filenames with associated format information, rather than list of filenames
+    * No longer takes separate "filename\_format" argument that must apply to all files
+* single\_source.plot\_data
+    * Takes in output\_dict rather than separate output file names and output format
+    * Returns dictionary of output file names with associated filename formats, rather than list of filenames
+    * Takes in variable for kwargs rather than \*\*kwargs
+        (so it is explicit which kwargs should be applied to which module)
+* single\_source.plot\_sectored\_data\_output (ie, sectored, unregistered outputs)
+    * Takes in output\_dict rather than individual filename/output formats 
+    * Add area\_def argument
+    * Returns dictionary of output file names with associated filename formats, rather than list of filenames
+* single\_source.process\_xarray\_dict\_to\_output\_format (ie, unsectored, unregistered outputs)
+    * Takes in output\_dict rather than individual filename/output formats 
+    * Add area\_def argument
+    * Returns dictionary of output file names with associated filename formats, rather than list of filenames
+* single\_source.get\_filename
+    * (alg\_xarray, area\_def, filename\_format, product\_name)
+        -> (filename\_format, product\_name=None, alg\_xarray=None, area\_def=None,
+            output\_dict=None, suppored\_filenamer\_type=None)
+    * Consolidated to support
+        * metadata outputs
+        * sectored/unsectored outputs
+        * registered outputs
+* Remove center coverage check from 89H-Physical product
+    * For consistency with other products, request at the command line / output config level
+    * Add center coverage product\_params\_override to direct command line amsr2.sh test call
+
+### Refactor
+* Pass "output\_dict" to all filename and output modules, for consistent application of options (allows
+    specifying arguments via single\_source command line or output YAML config dict)
+    * kwarg to all product modular interface functions
+    * Optional kwarg to all filename and output modules (if it is not included as a kwarg, it is filtered
+        out from within single\_source and not attempted to be passed in)
+        * tc\_clean\_fname - for including coverage function information in filename
+        * tc\_fname - for including coverage function information in filename
+* single\_source.output\_all\_metadata
+    * Returns dictionary of output filenames and formats
+* single\_source.get\_output\_filenames
+    * Returns dictionary of output\_filenames and metadata\_filenames with associated formats
+* Separate test\_all.sh (includes test scripts that do not have bundled test data) and test\_base\_install.sh
+    (only includes test scripts with bundled test data)
+* Move "get\_bg\_xarray" from overlay procflow to config\_based procflow
+
+
+### Major New Functionality
+* Updated "product" modular interface
+    * Add "list\_products\_by\_source" and "list\_products\_by\_products"
+* Available functionality documentation page - includes readers and products, with examples
+    * Readers
+        * AMSU-B
+        * HY2
+        * SAR
+        * SMOS
+    * Products
+        * 183-3H
+        * NRCS
+        * sectored text winds
+        * unsectored text winds
+* Sample test scripts with explicit command line call examples - input dataset NOT included, but
+    all sector information and output comparison files are available directly within geoips2
+    * AMSR2 89H-Physical, using bdeck bio012020.dat
+    * AMSU-B 183-3H, using bdeck bwp022021.dat
+    * SAR windspeed, using bdeck bwp312018.dat
+    * SMOS sectored, using bdeck bsh162020.dat
+* Sectored and Unsectored text wind outputs
+    * SAR
+* Support user-defineable metadata output formats, command line args and YAML output config fields
+    * metadata\_filename\_format (default None)
+    * metadata\_filename\_format\_kwargs (default {})
+    * metadata\_output\_format  (default None)
+    * metadata\_output\_format\_kwargs (default {})
+* Support user-defineable modifications to product parameters, via command line or output config fields
+    * product\_params\_override (default {})
+* Add "standard\_metadata" filename and output format types (to match version previously used automatically for
+    all TC sectors - will continue to use "standard\_metadata" for testing purposes to avoid changing all
+    test repo outputs)
+* Add "output\_config" interface module to pull parameters from output config dictionaries
+    * output\_config\_dict: full dictionary referring to complete YAML output config file
+    * output\_dict: dictionary referring to a single set of output parameters for a single output type
+        (subset of output\_config\_dict - matches "command\_line\_args" in single\_source procflow)
+
+### Improvements
+* Moved documentation imagery into subdirectories
+    * available\_functionality
+    * geoips2\_overview
+    * command\_line\_examples
+* More informative log statement at the end of single\_source and config\_based procflows
+* During output comparisons, name diff directory "diff\_test\_output\_dir" and files "diff\_test\_output"
+
+
+# v1.3.2: 2021-12-21, title\_format interface
+
+### Major New Functionality
+    * Create dev/title.py interface for alternative title formats
+        * Add interface_modules/title_formats
+            * tc_standard.py (existing default)
+            * static_standard.py (existing default)
+            * tc_copyright.py (currently for hy2)
+        * Pass "title_format" to annotated imagery and windbarbs
+            * imagery_annotated.py
+            * imagery_windbarbs.pycam
+
+### Improvements
+    * Updated template pull request ticket: Testing Instructions, Summary, Output, Individual Commits
+    * Use dictionary of filename\_formats\_kwargs in YAML output configs rather than a single filename\_format\_kwarg
+        * allows multiple filename_formats and specific kwargs for each
+    * Allow passing "title\_copyright" from command line or YAML output config for use in annotated imagery
+    * Added new DATABASESUCCESS and DATABASEFAILURE string checks to test\_all\_run.sh
+    * Note disk space, memory, and time required at the beginning of geoips2 base installation
+    * Use wget rather than curl for rclone setup for consistency
+    * satpy>=0.33.1, pyresample>=1.22.3 for future geostationary geolocation improvements
+    * Add "do\_not\_fail" option to repo update commands, to allow looping through all, and only updating those
+        with the requested branch available (and not failing catastrophically on branches that don't exist)
+    * Use a single consolidated "plot\_data" function for both single source and overlay functionality
+        * Set up bg_xarray, bg_data, bg_mpl_colors_info, and bg_product_name_title kwargs within config_based procflow
+
+### Bug fixes
+    * Add rclone.conf file required for AWS ABI downloads
+    * Correctly replace \*\_URL environment variables within geoips paths
+
+
+# v1.3.1: 2021-12-07, hscat processing
+
+### Refactor
+    * Remove unused code
+    * Use console scripts rather than calling command line python utilities explicitly
+        * list_available_modules
+        * test_interfaces
+
+### Major New Functionality
+    * Add hscat hy-2b and hy-2c processing
+        * windspeed
+        * windbarbs
+        * unsectored text
+        * sectored text
+    * Add test script to test all dev and stable interfaces
+        * list_available_modules
+        * test_interfaces
+    * imagery_windbarbs_clean output_format
+    * output_format_kwargs and filename_format_kwargs options in YAML output config and command line
+        * Useful for append, overwrite, basedir options
+    * text_winds_day_fname with %Y%m%d dtg
+
+### Bug fixes
+    * Remove duplicates from list_<interface>s_by_type output
+    * Update bdeck_parser to allow 30 or 38 or 40 or 42 fields
+    * Include header in text wind output when the file does not exist, or we are not in append mode
+    * Pass padded xarray to adjust_area_def for amsu-b data
+        * amsu-b requires full swath width
+    * Update to log filename for test scripts
+        * command line arg now has ' ' and '/' replaced with '_' to get a single unique filename with no additional subdirectories
+
+### Deprecations
+    * Removed basemap-based windbarb plotting commands (no longer functional)
+
+
 # v1.3.0: 2021-11-24, atcf->tc, remove "satops"
 
 ### Breaking Interface Changes

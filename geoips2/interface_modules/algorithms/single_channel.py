@@ -29,17 +29,33 @@ alg_func_type = 'list_numpy_to_numpy'
 def single_channel(arrays, output_data_range=None, input_units=None, output_units=None,
                    min_outbounds='crop', max_outbounds='crop', norm=False, inverse=False,
                    sun_zen_correction=False,
-                   mask_night=False, min_day_zen=None,
-                   mask_day=False, max_night_zen=None,
+                   mask_night=False, max_day_zen=None,
+                   mask_day=False, min_night_zen=None,
                    gamma_list=None, scale_factor=None):
     ''' Data manipulation steps for applying a data range and requested corrections to a single channel product
+
+        Order of operations, based on the passed arguments, is:
+            1. Mask night
+            2. Mask day
+            3. Apply solar zenith correction
+            4. Apply gamma values
+            5. Apply scale factor
+            6. Convert units
+            7. Apply data range.
+
+        NOTE: If "norm=True" is specified, the "output_data_range" will NOT match the actual range of the returned
+        data, since the normalized data will be returned between 0 and 1.
+
+        If you require a different order of operations than that specified within "single_channel" algorithm, please
+        create a new algorithm for your desired order of operations.
 
     Args:
         arrays (list[numpy.ndarray]) : 
             * list of numpy.ndarray or numpy.MaskedArray of channel data and other variables, in order of sensor "variables" list
             * Channel data: Degrees Kelvin
         output_data_range (list[float]) :
-            * list of min and max value for output data product
+            * list of min and max value for output data product.
+                This is applied LAST after all other corrections/adjustments
         input_units (str) : DEFAULT None
             * Units of input data, for applying necessary conversions
         output_units (str) : DEFAULT None
@@ -62,6 +78,11 @@ def single_channel(arrays, output_data_range=None, input_units=None, output_unit
             * Boolean flag indicating whether to inverse (True) or not (False)
                 * If True, returned data will be inverted
                 * If False, returned data will not be inverted
+        sun_zenith_correction (bool) : DEFAULT False
+            * Boolean flag indicating whether to apply solar zenith correction (True) or not (False)
+                * If True, returned data will have solar zenith correction applied
+                    (see data_manipulations.corrections.apply_solar_zenith_correction)
+                * If False, returned data will not be modified based on solar zenith angle
 
 
     Returns:
@@ -73,20 +94,26 @@ def single_channel(arrays, output_data_range=None, input_units=None, output_unit
     if output_data_range is None:
         output_data_range = [data.min(), data.max()]
 
-    if min_day_zen and len(arrays) == 2:
+    # Mask everything greater than max_day_zen
+    # day zenith angles are less than 90
+    # night zenith angles are greater than 90
+    if max_day_zen and len(arrays) == 2:
         from geoips2.data_manipulations.info import percent_unmasked
         from geoips2.data_manipulations.corrections import mask_night
         sun_zenith = arrays[1]
         LOG.info('Percent unmasked day/night %s', percent_unmasked(data))
-        data = mask_night(data, sun_zenith, min_day_zen)
+        data = mask_night(data, sun_zenith, max_day_zen)
         LOG.info('Percent unmasked day only %s', percent_unmasked(data))
 
-    if mask_day and max_night_zen and len(arrays) == 2:
+    # Mask everything less than min_night_zen
+    # day zenith angles are less than 90
+    # night zenith angles are greater than 90
+    if mask_day and min_night_zen and len(arrays) == 2:
         from geoips2.data_manipulations.info import percent_unmasked
         from geoips2.data_manipulations.corrections import mask_day
         sun_zenith = arrays[1]
         LOG.info('Percent unmasked day/night %s', percent_unmasked(data))
-        data = mask_day(data, sun_zenith, max_night_zen)
+        data = mask_day(data, sun_zenith, min_night_zen)
         LOG.info('Percent unmasked night only %s', percent_unmasked(data))
 
     if sun_zen_correction and len(arrays) == 2:

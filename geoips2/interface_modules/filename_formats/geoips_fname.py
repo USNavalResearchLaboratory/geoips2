@@ -35,6 +35,20 @@ def geoips_fname(area_def, xarray_obj, product_name, coverage, output_type='png'
 
     resolution = max(area_def.pixel_size_x, area_def.pixel_size_y) / 1000.0
 
+    kwargs = {}
+    if 'continent' in area_def.sector_info:
+        kwargs['continent'] = area_def.sector_info['continent']
+    if 'country' in area_def.sector_info:
+        kwargs['country'] = area_def.sector_info['country']
+    if 'area' in area_def.sector_info:
+        kwargs['area'] = area_def.sector_info['area']
+    if 'subarea' in area_def.sector_info:
+        kwargs['subarea'] = area_def.sector_info['subarea']
+    if 'state' in area_def.sector_info:
+        kwargs['state'] = area_def.sector_info['state']
+    if 'city' in area_def.sector_info:
+        kwargs['city'] = area_def.sector_info['city']
+
     extra = '{0:0.1f}'.format(resolution).replace('.', 'p')
     web_fname = assemble_geoips_fname(basedir=basedir,
                                       product_name=product_name,
@@ -49,12 +63,7 @@ def geoips_fname(area_def, xarray_obj, product_name, coverage, output_type='png'
                                       extra=extra,
                                       product_dir=product_dir,
                                       source_dir=source_dir,
-                                      continent=area_def.sector_info['continent'],
-                                      country=area_def.sector_info['country'],
-                                      area=area_def.sector_info['area'],
-                                      subarea=area_def.sector_info['subarea'],
-                                      state=area_def.sector_info['state'],
-                                      city=area_def.sector_info['city'])
+                                      **kwargs)
     return web_fname
 
 
